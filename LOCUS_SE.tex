@@ -1,0 +1,1886 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+\usepackage{cite}
+\usepackage{enumitem}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\graphicspath{{logo/}}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{caption}
+\usepackage[english]{babel} % 언어에 맞는 하이픈 처리
+\usepackage{microtype}      % 자동 간격 및 하이픈 조정
+\usepackage[justification=centering]{caption}
+\setlength{\parindent}{1em}  % 문단 들여쓰기 설정
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{float} % H 옵션 사용
+\usepackage{array} % 테이블 자동 줄바꿈용
+\usepackage{seqsplit} % \texttt{} 안에서 줄바꿈 허용
+\graphicspath{{img/}} % signup.jpg 있는 폴더
+
+\title{LOCUS: AI-Driven Household Context-Awareness for Predictive Cleaning}
+
+% --- 저자 정보 (IEEE Conference 방식) ---
+% 4명의 저자를 2명씩 2줄로 배치하거나 가로로 배치합니다.
+\author{\IEEEauthorblockN{1\textsuperscript{st} Hanyeong Go}
+\IEEEauthorblockA{\textit{Dept. of Information Systems} \\
+\textit{Hanyang University}\\
+Seoul, South Korea \\
+lilla9907@hanyang.ac.kr}
+\and
+\IEEEauthorblockN{2\textsuperscript{nd} Junhyung Kim}
+\IEEEauthorblockA{\textit{Dept. of Information Systems} \\
+\textit{Hanyang University}\\
+Seoul, South Korea \\
+combe4259@hanyang.ac.kr}
+\and
+\IEEEauthorblockN{3\textsuperscript{rd} Dayeon Lee}
+\IEEEauthorblockA{\textit{Dept. of Sports Science} \\
+\textit{Hanyang University}\\
+Seoul, South Korea \\
+ldy21@hanyang.ac.kr}
+\and
+\IEEEauthorblockN{4\textsuperscript{th} Seunghwan Lee}
+\IEEEauthorblockA{\textit{Dept. of Information Systems} \\
+\textit{Hanyang University}\\
+Seoul, South Korea \\
+shlee5820@hanyang.ac.kr}
+}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+
+\begin{abstract}
+Current robot vacuums remain ``reactive'' tools, dependent on pre-set schedules or direct user commands. This limitation prevents them from effectively addressing dynamic contamination scenarios, such as ``a messy kitchen immediately after cooking.'' To solve this, we propose \textbf{LOCUS (Learning On-device Context and User-specific Schedules)}, a predictive cleaning system powered by On-device AI. Unlike traditional cloud-based systems, LOCUS processes all data locally on edge devices (robot vacuum and smartphone tracker), ensuring complete privacy protection. The system integrates multiple modular components: Spatial Mapping (Apple RoomPlan \& ARKit for 3D home structure), Visual Context (YOLO for object and pollution detection), and Audio Context (YAMNet for household sound classification). A core innovation, the \textit{TimeSyncBuffer}, temporally aligns asynchronous multi-modal sensor streams ($\pm$500ms tolerance) via ZeroMQ, enabling a GRU-based sequential model to predict zone-specific pollution levels in real-time. Additionally, the system employs Federated Personalization (FedPer) to enable household-specific model adaptation while preserving user privacy. Ultimately, LOCUS establishes a ``Proactive Partner'' system that anticipates cleaning needs based on dynamic household context rather than rigid schedules.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Edge AI, On-device AI, IoT, Artificial Intelligence, Federated Learning
+\end{IEEEkeywords}
+
+% Role Assignment
+\begin{table}[h]
+\caption{Role Assignments}
+\def\arraystretch{1.24} \small
+
+\begin{tabular}{|p{1.5cm}|p{1.2cm}|p{4.9cm}|}
+    \hline
+    Development Manager \par & Lee \par Seung Hwan & Project Management: Oversee project schedule and milestones. \par Mobile Development: Develop the spatial mapping app using Apple RoomPlan \& ARKit. \par Audio AI: Implement the Audio Context Module using YAMNet. \\
+    \hline
+    SW \par Developer \par (AI/ML) \par & Go  \par Han Yeong  & Federated Learning: Design and implement the FedPer-based personalized federated learning system. \par Location Intelligence: Handle coordinate transformation and synchronization logic. \par System Demo: Lead the final demonstration and integration testing. \\
+    \hline
+    SW \par Developer \par (Core) \par & Kim \par Jun Hyung & Visual AI: Implement object \& pose detection using YOLO. \par Prediction Model: Develop the GRU-based sequential pollution prediction module. \par Data Fusion: Implement TimeSyncBuffer for multi-modal sensor alignment. \\
+    \hline
+    Project Manager \par \& Documentation Lead \par & Lee \par Da Yeon & Documentation: Lead the writing of Proposal, Specification, and Final Paper. \par Dashboard Design: Design the system monitoring dashboard (UI/UX). \par Planning: Define Use Cases and manage Requirements (FR/NFR). \\
+    \hline
+\end{tabular}
+\end{table}
+
+% Introduction 시작
+\section{INTRODUCTION}
+
+\subsection{Motivation}
+This research is driven by two simultaneous paradigm shifts in the consumer electronics landscape:
+
+\begin{itemize}
+    \item [1)] From Scheduled Automation to Context-Aware Intelligence \\
+    Robot vacuums have evolved from simple automated cleaning tools into essential smart home appliances. The market is now shifting beyond powerful suction and basic obstacle avoidance toward intelligent services that minimize user intervention. Modern users increasingly expect a ``Proactive Partner'' that understands household context---such as recognizing post-meal debris under a dining table---rather than a passive machine dependent on rigid schedules.
+
+    \item [2)] Hardware Enablement for Edge AI  \\
+    The practical deployment of such systems is enabled by recent breakthroughs in mobile computing architectures, particularly \textbf{Apple Silicon} and robot-specific \textbf{NPUs (Neural Processing Units)}. Unlike cloud-based GPU servers, these on-device accelerators feature optimized memory bandwidth and dedicated tensor cores for high-speed matrix operations. This hardware advancement enables the simultaneous execution of multiple deep learning models (e.g., YOLO for vision, YAMNet for audio) directly on edge devices with low latency and high energy efficiency, eliminating the need for privacy-compromising cloud processing.
+\end{itemize}
+
+\subsection{Problem Statement}
+Despite rapid hardware advancements, currently commercialized robot vacuum software still faces the following limitations:
+\begin{itemize}
+    \item [1)] Schedule-Dependent Operation \\
+    Current robot vacuums remain ``reactive'' tools, dependent on pre-set schedules or direct user commands. This prevents them from effectively addressing dynamic contamination scenarios, such as cleaning ``the kitchen immediately after cooking'' or ``the dining table after a meal.''
+
+    \item [2)] Lack of Context Awareness \\
+    Existing systems lack the ability to infer ``when, where, and why'' contamination occurred. They merely avoid obstacles and fail to interpret user living patterns through visual or auditory cues, resulting in poor environmental adaptability.
+
+    \item [3)] Privacy and Trust Issues \\
+    The conventional approach of transmitting raw camera and microphone data to cloud servers for AI processing raises significant privacy concerns, including potential data breaches and unauthorized surveillance.
+\end{itemize} 
+
+
+\subsection{Proposed Solution}
+\begin{itemize}
+    \item [1)] Predictive Cleaning based on Multi-modal Context \\
+    Instead of rigid scheduling, the system implements a ``Proactive Partner'' capable of predicting when and where cleaning is needed by fusing visual, auditory, and location context in real-time.
+
+    \item [2)] Privacy Assurance via On-device AI \\
+    Sensitive raw data is processed exclusively on edge devices. Federated Personalization (FedPer) enables household-specific model adaptation without transmitting personal data to external servers.
+
+    \item [3)] User-Specific Environmental Adaptation \\
+    By learning user-defined spatial labels (e.g., ``Kitchen,'' ``Living Room'') and unique living patterns, the system establishes a personalized cleaning policy tailored to each household.
+\end{itemize}
+
+
+\subsection{Research on Related Software}
+
+This work builds upon several existing technologies and systems:
+
+\begin{itemize}
+\item [1)] Commercial Robot Vacuum Systems \\
+Leading robot vacuum platforms such as iRobot Roomba~\cite{irobot_roomba} and Roborock~\cite{roborock} provide app-based scheduling and room mapping capabilities. To the best of our knowledge, current commercial systems primarily rely on user-defined schedules rather than context-aware AI to predict cleaning needs based on real-time household activities.
+
+\item [2)] Smart Home Platforms \\
+Apple HomeKit~\cite{apple_homekit} and Google Home~\cite{google_home} enable rule-based automation of IoT devices. While these platforms support time-based or sensor-triggered routines, they typically do not integrate multi-modal AI inference for predictive decision-making.
+
+\item [3)] Spatial Mapping Technologies \\
+Apple RoomPlan~\cite{apple_roomplan} provides automated 3D scanning and room classification using LiDAR. LOCUS leverages RoomPlan for spatial context, enabling zone-based cleaning policies without manual labeling.
+
+\item [4)] Federated Learning Systems \\
+Federated Learning frameworks such as TensorFlow Federated~\cite{bonawitz2019tensorflow} enable distributed training without raw data sharing. LOCUS employs Federated Personalization (FedPer)~\cite{arivazhagan2019federated}, which separates shared and personalized model components to balance privacy and customization.
+\end{itemize}
+
+
+\section{REQUIREMENT}
+
+\subsection{User Application Requirements (UAR)}
+
+\begin{enumerate}
+    \item [1)] UAR1. Sign Up \\
+    LOCUS requires name, email, and password for user registration.
+    \begin{itemize}
+        \item UAR1.1: User Information Input \\
+        Users must enter their name, email address, and password. The email is verified through the carrier's authentication system to ensure validity.
+
+        \item UAR1.2: Password Validation \\
+        Passwords must be at least 8 characters long and include a combination of 3 or more character types (uppercase, lowercase, numbers, special characters). A confirmation field ensures correct input.
+
+        \item UAR1.3: Terms of Service Agreement \\
+        Users must consent to mandatory terms before account creation. The system provides a ``Select All'' option for convenience and displays the full text of each agreement upon request.
+    \end{itemize}
+
+    \item [2)] UAR2. Login \\
+    LOCUS provides multiple authentication methods for user convenience.
+    \begin{itemize}
+        \item UAR2.1: Email/Password Authentication \\
+        Users enter their registered email and password. The system validates credentials and transitions to the home screen upon success.
+
+        \item UAR2.2: Gmail OAuth Integration \\
+        Users can log in using their Google (Gmail) account without entering a separate LOCUS password.
+
+        \item UAR2.3: Account Recovery \\
+        Users can access the sign-up page or recover their password through carrier-based verification if they forget their credentials.
+    \end{itemize}
+
+    \item [3)] UAR3. Home Management \\
+    The application supports registration and management of multiple spatial environments.
+    \begin{itemize}
+        \item UAR3.1: Home Addition \\
+        Users can register new homes by uploading a 3D structural file (.glb) generated via Apple RoomPlan, along with address and nickname metadata.
+
+        \item UAR3.2: Home Selection Interface \\
+        Displays registered homes as card-based UI elements showing home name, address, connection status (Active/Away), and connected IoT device count.
+
+        \item UAR3.3: Status Monitoring \\
+        Provides real-time status indicators (Green: Active, Yellow: Away) for at-a-glance system monitoring.
+    \end{itemize}
+
+    \item [4)] UAR4. Semantic Labeling Management \\
+    The application must provide an interface for users to define and manage semantic zones (e.g., Living Room, Kitchen) which map physical 3D coordinates to logical contexts.
+    \begin{itemize}
+        \item UAR4.1: Label CRUD Operations \\
+        Supports creating, reading, updating, and deleting semantic labels. Users can view existing labels with their current 3D coordinates.
+
+        \item UAR4.2: 3D Coordinate Mapping \\
+        Users can define a zone's position by clicking four points directly on the 3D viewer to form a polygon boundary. The system automatically captures and stores the (x, y, z) coordinates of the defined region.
+
+        \item UAR4.3: Customization \\
+        Users can assign specific names (e.g., ``Study Room'') and color codes to each label to visually distinguish zones in both the 3D viewer and 2D floor plan.
+    \end{itemize}
+
+    \item [5)] UAR5. Real-time Context Monitoring \& AI Prediction \\
+    The web dashboard shall provide a real-time monitoring interface that visualizes the robot's current status and AI-based environmental analysis on the semantic map.
+    \begin{itemize}
+        \item UAR5.1: Semantic Zone Overlay \\
+        The defined semantic zones (e.g., Kitchen, Bedroom) must be visualized on a 2D floor plan view derived from the 3D structure, with color-coded status indicators for easy recognition.
+
+        \item UAR5.2: AI Pollution Prediction Display \\
+        The interface shall display the pollution probability (0.0–1.0 scale) predicted by the GRU model for each zone. High-risk areas ($\geq$0.70) must be highlighted in red, medium-risk (0.40–0.69) in orange, and low-risk ($<$0.40) in green. Numerical indicators are shown as percentages alongside the color-coded status.
+
+        \item UAR5.3: Operation Status Tracking \\
+        The system must indicate the robot's current activity (e.g., ``Cleaning Kitchen''), connectivity status, and cleaning progress via a bottom sheet or status bar. Users can manually intervene with control options such as pause, resume, or stop to override AI-driven cleaning schedules.
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Web Dashboard Requirements (WDR)}
+The system includes a dedicated web interface for advanced monitoring and system administration.
+
+\begin{enumerate}
+    \item [1)] WDR1. Multi-modal Context Visualization \\
+    The dashboard shall provide a unified view of real-time inference results from heterogeneous sensors. It must display bounding boxes for YOLO object detection, keypoints for Pose estimation, and classification labels for YAMNet audio analysis. Additionally, it visualizes the mapping of raw $(x, y)$ coordinates to specific semantic zones (e.g., "unknown" to "Kitchen").
+
+    \item [2)] WDR2. AI Inference Pipeline \& Pollution Prediction \\
+    The dashboard must present a unified real-time inference pipeline view to diagnose the stability of the On-device AI and visualize pollution predictions. It shall display sensor message counts (visual, pose, audio, location) and TimeSync Buffer status (e.g., 25/30 timesteps). The visualization shows the complete data flow from sensors through Context Encoder to GRU prediction. The final stage of this pipeline visualizes the pollution prediction results for each semantic zone (e.g., Balcony, Bedroom) with color-coded indicators: high-risk zones ($\geq$0.70) in red, medium-risk (0.40–0.69) in orange, and low-risk ($<$0.40) in green. This integrated visualization enables developers to monitor both the synchronization health and the prediction outcomes in a single cohesive view.
+\end{enumerate}
+
+
+
+\subsection{Functional Requirements (FR)}
+\begin{description}
+    \item[1)] FR1. Home Structure \& Location Intelligence Module \\
+    The system shall generate a 3D indoor structure map using Apple RoomPlan and ARKit. Users can assign semantic labels to each room through the application. The system must transmit the robot's real-time location to share the current zone information with all modules.
+    \begin{itemize}
+        \item FR1.1: Generate 3D home structure using LiDAR and RoomPlan.
+        \item FR1.2: Allow users to define semantic labels for each zone.
+        \item FR1.3: Broadcast real-time robot coordinates to all modules.
+        \item FR1.4: Maintain current zone information accessible to all modules.
+        \item FR1.5: Synchronize zone updates via MQTT.
+    \end{itemize}
+
+    \vspace{1em}
+    
+    \item[2)] FR2. Multimodal Context Awareness
+    \begin{itemize}
+        \item FR2.1 Visual Object Detection (YOLO): \\
+        The system must detect household objects and furniture using an on-device YOLO model. Detection results (object class, bounding box, confidence) are indexed by the robot's current zone coordinates to create spatially-aware visual context features.
+        \item FR2.2 Human Pose Estimation (YOLO-Pose): \\
+        The system must analyze human behaviors and postures using YOLO-Pose to infer user activities and predict pollution patterns.
+        \item FR2.3 Audio Context (YAMNet): \\
+        The system must classify household sounds such as dishwashing or TV audio using the YAMNet model.
+        \item FR2.4 Timestamp Synchronization: \\
+        The system must synchronize visual, audio, and location data collected asynchronously. Data is aligned within a ±500ms window to generate a unified context vector.
+        \item FR2.5 Multi-Modal Feature Fusion: \\
+        The system uses an attention-based encoder to combine different sensor data into a single context vector. This enables learning relationships between inputs.
+
+    \end{itemize}
+
+    \item[3)] FR3. Sequential GRU Prediction \\
+    The system must use a GRU model to learn from 30-timestep context sequences (each timestep containing 160-dimensional multi-modal features) generated by the TimeSyncBuffer. The model outputs zone-specific contamination probability (0.0–1.0 scale) by learning temporal relationships between user activities (e.g., cooking, eating, moving) and pollution generation.
+
+    \item[4)] FR4. Personalized Federated Learning \\
+    To protect user privacy, the model is split into a Base Layer and a Head Layer. Only the Base Layer is exchanged with the server during federated learning, while the Head Layer remains on-device.
+
+    \begin{itemize}
+        \item FR4.1 Base Layer (Shared): \\
+        Stacked GRU layers that learn common behavioral patterns across all households. These layers are trained using the Flower federated learning framework. Only model weights are transmitted to the server, not raw data.
+        \item FR4.2 Head Layer (Personalized): \\
+        Final prediction layers trained exclusively on-device using local feedback data. This Head Layer never leaves the device and enables household-specific customization.
+        \item FR4.3 On-Device Personalization: \\
+        The system collects prediction-feedback pairs in a local buffer (maximum 300 samples). When the buffer accumulates at least 100 samples, the Head Layer is fine-tuned for 5 epochs using MSE loss while the Base Layer remains frozen. The training uses an 80/20 train-validation split with batch size 16. The updated model is saved automatically for future predictions.
+
+    \end{itemize}
+
+    \item[5)] FR5. Cleaning Decision \& Execution
+    \begin{itemize}
+        \item FR5.1 Threshold-Based Decision: \\
+        The system must compare GRU predictions against a pollution threshold (0.5) to determine which zones require cleaning. Zones exceeding this threshold are sorted by pollution probability in descending order and cleaned sequentially, starting with the highest pollution levels.
+        \item FR5.2 Pre-Cleaning Verification: \\
+        Before cleaning each zone, the system captures a camera frame and uses YOLO to detect pollution objects (solid waste, liquid stains). The actual pollution score is calculated by aggregating YOLO confidence scores weighted by object type. This ground truth measurement is compared against GRU predictions to compute prediction errors, which are then used as feedback data for Head Layer fine-tuning.
+        \item FR5.3 Cleaning Execution \& Reporting: \\
+        The system executes cleaning operations and reports real-time status updates via MQTT and WebSocket. Status messages include start/completion events, zone names, duration, and pollution scores.
+        \item FR5.4 Feedback Learning: \\
+        The system collects zone-specific prediction-feedback pairs (GRU predictions vs YOLO ground truth measurements) during cleaning sessions. These pairs are automatically fed to the on-device trainer's buffer, triggering Head Layer retraining when sufficient samples accumulate (as specified in FR4.3).
+    \end{itemize}
+
+\end{description}
+
+\subsection{Non-Functional Requirements (NFR)}
+\begin{description}
+    \item[1)] NFR1. Privacy \& Data Protection \\
+    The system must ensure that sensitive raw data (camera frames, audio recordings, user behavioral patterns) never leaves the edge device.
+    \begin{itemize}
+        \item NFR1.1 On-Device AI Processing: \\
+        All AI inference operations (YOLO object detection, YOLO-Pose estimation, YAMNet audio classification, GRU pollution prediction) must execute locally on the edge device. No raw sensor data shall be transmitted to external servers.
+        \item NFR1.2 Federated Learning Privacy: \\
+        During federated learning, only the Base Layer model weights (NumPy arrays) are transmitted to the Flower server. Raw training data, user activities, and household-specific information remain on-device and are never shared.
+        \item NFR1.3 Head Layer Isolation: \\
+        The personalized Head Layer, which contains household-specific behavioral patterns, must remain exclusively on the local device. This layer is trained using on-device feedback and is never transmitted to external servers.
+        \item NFR1.4 Metadata-Only Communication: \\
+        MQTT and WebSocket communications shall transmit only metadata (zone names, pollution scores, timestamps, cleaning status) without including raw sensor data or personally identifiable information.
+    \end{itemize}
+
+    \vspace{1em}
+
+    \item[2)] NFR2. Real-time Performance \\
+    The system must process multi-modal sensor data and generate cleaning decisions with minimal latency to enable responsive autonomous operation.
+    \begin{itemize}
+        \item NFR2.1 Sensor Synchronization: \\
+        The TimeSyncBuffer must align asynchronous sensor streams (visual, audio, location) within a ±500ms tolerance window to generate temporally consistent context vectors.
+        \item NFR2.2 Sequential Processing Latency: \\
+        The GRU model must process 30-timestep context sequences (30 × 160-dimensional vectors) and output zone-specific predictions within acceptable real-time constraints to support immediate cleaning decisions.
+        \item NFR2.3 Low-Latency Communication: \\
+        ZeroMQ IPC (Inter-Process Communication) protocol must be used for internal module communication to minimize message passing overhead between sensor modules and the AI inference engine.
+        \item NFR2.4 Real-time Status Updates: \\
+        WebSocket connections must deliver cleaning status updates, pollution predictions, and system health metrics to the dashboard with sub-second latency to enable real-time monitoring.
+        \item NFR2.5 Asynchronous Execution: \\
+        Backend communication and cleaning execution must operate asynchronously (using asyncio) to prevent blocking the main inference loop and ensure continuous real-time prediction.
+    \end{itemize}
+\end{description}
+
+\section{DEVELOPMENT ENVIRONMENT}
+
+\subsection{Choice of software development platform}
+\begin{enumerate}
+
+\item[1] Operating System (OS)
+
+\begin{itemize}
+\item [1)] Windows\\
+Windows is Microsoft's desktop operating system providing a stable development environment with comprehensive tooling support. It offers native compatibility with major development frameworks and languages including Python, Node.js, and TypeScript. The platform features robust command-line capabilities through PowerShell and Windows Subsystem for Linux (WSL), enabling seamless integration with both Windows-native and Unix-based development workflows. \\
+
+\item [2)] macOS\\
+macOS is Apple's operating system providing a robust development environment centered around Xcode for Apple ecosystem development. Its Unix foundation offers powerful command-line capabilities, while package managers like Homebrew facilitate tool management. The platform excels in native iOS and iPadOS development through Swift and Objective-C support, and provides exclusive access to Apple's frameworks including ARKit and RoomPlan API. The integrated development toolchain includes the iOS Simulator, Instruments for performance profiling, and seamless integration with Apple's hardware testing devices. \\
+\end{itemize}
+\end{enumerate}
+
+\begin{enumerate}
+\item[2] Programming Languages
+
+\begin{itemize}
+\item [1)] Python\cite{Python}
+\begin{figure}[h]
+\hspace{1.5cm}
+\centering
+\begin{minipage}{0.5\columnwidth}
+    \includegraphics[width=\linewidth]{logo/Python-Photoroom.png}
+    \caption{Python}
+\end{minipage}
+\end{figure} \\
+
+Python is a high-level, interpreted programming language known for its simplicity, readability, and extensive library ecosystem. It provides rich support for scientific computing through libraries such as TensorFlow, PyTorch, NumPy, and Pandas, making it the de facto standard for machine learning and data processing tasks. The language's dynamic typing and automatic memory management enable rapid prototyping, while its mature frameworks like FastAPI and Flask facilitate backend server development. Python's cross-platform compatibility and strong community support ensure broad accessibility across different development environments.\\
+
+\item [2)] TypeScript\cite{Typescript}
+\begin{figure}[h]
+\hspace{1cm}
+\centering
+\begin{minipage}{0.5\columnwidth}
+    \includegraphics[width=\linewidth]{logo/TypeScript-Photoroom.png}
+    \caption{Typescript}
+\end{minipage}
+\end{figure} \\
+
+TypeScript is a strongly typed superset of JavaScript that compiles to plain JavaScript, adding optional static typing to the language. It provides compile-time type checking that catches errors early in the development process, significantly reducing runtime failures and improving code maintainability. The language supports modern ECMAScript features and offers excellent IDE integration with features like intelligent code completion, refactoring tools, and inline documentation. TypeScript's gradual typing system allows developers to incrementally adopt type safety in existing JavaScript codebases, making it ideal for large-scale web application development.\\
+
+\item [3)] JavaScript\cite{JavaScript}
+\begin{figure}[h]
+\hspace{1cm}
+\centering
+\begin{minipage}{0.5\columnwidth}
+    \includegraphics[width=\linewidth]{logo/javascript-Photoroom.png}
+    \caption{JavaScript}
+\end{minipage}
+\end{figure}\\
+JavaScript is a multi-paradigm scripting language used to build interactive user interfaces and application logic across web and cross-platform environments. It provides dynamic typing and event-driven programming capabilities, enabling responsive user experiences in both browser-based and mobile applications. The language's vast ecosystem includes package managers like npm and build tools like Webpack, facilitating modern frontend development workflows.\\
+\end{itemize}
+\end{enumerate}
+
+
+\begin{enumerate}
+\item[3] Cloud Infrastructure
+
+\item[1)] Amazon Web Services (AWS)\cite{Amazon Web Services (AWS)}
+\begin{figure}[h]
+\hspace{1cm}
+\centering
+\begin{minipage}{0.5\columnwidth}
+    \includegraphics[width=\linewidth]{logo/AWS-Photoroom.png}
+    \caption{Amazon Web Services (AWS)}
+\end{minipage}
+\end{figure}\\
+Amazon Web Services (AWS) is a comprehensive cloud computing platform that provides scalable infrastructure and managed services for application deployment. It offers resizable compute capacity through EC2 instances, along with features like auto-scaling, load balancing, and flexible networking configurations. The platform supports various database solutions including PostgreSQL, and provides robust security features with a pay-as-you-go pricing model. In the LOCUS project, AWS hosts the LocationLocusData backend system, which includes an MQTT broker for IoT device communication and REST API endpoints for user authentication, home structure management, and cleaning log persistence.
+
+\item[2)] Naver Cloud Platform\cite{Naver Cloud Platform}
+\begin{figure}[h]
+
+\centering
+\begin{minipage}{0.5\columnwidth}
+    \includegraphics[width=\linewidth]{logo/navercloud-Photoroom.png}
+    \caption{Naver Cloud Platform}
+    \label{fig:ncp}
+\end{minipage}
+\end{figure}\\
+Naver Cloud Platform is a Korean cloud service provider offering enterprise-grade infrastructure and AI services optimized for domestic markets. It provides virtual computing resources similar to AWS EC2, with support for various instance types and managed database services. In the LOCUS project, Naver Cloud hosts the Federated Learning server powered by the Flower framework, which orchestrates distributed model training by aggregating Base Layer weights from multiple edge devices while ensuring that raw household data never leaves individual homes.
+\end{enumerate}
+
+\begin{enumerate}
+\item[4] Development Tools
+
+\item[1)] Visual Studio Code\cite{Visual Studio Code}
+\begin{figure}[h]
+\hspace{2cm}
+\centering
+\begin{minipage}{0.5\columnwidth}
+    \includegraphics[width=\linewidth]{logo/VSCode-Photoroom.png}
+    \caption{Visual Studio Code}
+\end{minipage}
+\end{figure}\\
+Visual Studio Code (VS Code) is a lightweight but powerful source code editor developed by Microsoft. It is used as the primary Integrated Development Environment (IDE) for both Python and TypeScript development. With its vast ecosystem of extensions, including support for debugging, syntax highlighting, and version control integration, VS Code streamlines the coding workflow and facilitates efficient development across the multi-modal system components.\\
+
+\item[2)] Docker\cite{Docker}
+\begin{figure}[h]
+\hspace{2cm}
+\centering
+\begin{minipage}{0.5\columnwidth}
+    \includegraphics[width=\linewidth]{logo/docker-Photoroom.png}
+    \caption{Docker}
+\end{minipage}
+\end{figure}\\
+Docker is a containerization platform that packages applications and their dependencies into lightweight, portable containers, allowing them to run consistently across different environments. In LOCUS, Docker is used to run the PostgreSQL database in local development environments, providing a consistent and portable database setup across different developer machines.\\
+
+\item[3)] GitHub\cite{GitHub}
+\begin{figure}[h]
+\hspace{2cm}
+\centering
+\begin{minipage}{0.5\columnwidth}
+    \includegraphics[width=\linewidth]{logo/GitHub-Photoroom.png}
+    \caption{GitHub}
+\end{minipage}
+\end{figure}\\
+GitHub is a cloud-based platform for version control and collaboration, powered by Git. It serves as the central repository for the LOCUS project, managing the source code for the backend, frontend, and AI modules. GitHub facilitates team collaboration through features like pull requests, issue tracking, and code reviews, ensuring systematic version management and continuous integration throughout the development lifecycle.\\
+
+\item[4)] Notion\cite{Notion}
+\begin{figure}[!ht]
+\hspace{2cm}
+\centering
+\begin{minipage}{0.4\columnwidth}
+    \includegraphics[width=\linewidth]{logo/Notion-Photoroom.png}
+    \caption{Notion}
+\end{minipage}
+\end{figure}\\
+Notion is an all-in-one workspace tool used for project management, documentation, and team collaboration. In this project, Notion serves as the central hub for organizing research materials, tracking development progress via Kanban boards, and documenting API specifications. Its flexibility allows the team to maintain a shared knowledge base and synchronize tasks effectively across different development phases.\\
+
+\item[5)] Figma\cite{Figma}
+\begin{figure}[h]
+\hspace{1cm}
+\centering
+\begin{minipage}{0.4\columnwidth}
+    \includegraphics[width=\linewidth]{logo/figma-Photoroom.png}
+    \caption{Figma}
+\end{minipage}
+\end{figure}\\
+Figma is a collaborative web-based interface design tool for creating user interfaces and prototypes. It offers powerful design features including component-based systems, auto-layout, and interactive prototyping capabilities. The platform allows real-time collaboration among designers and developers, streamlining the design-to-development workflow with efficient handoff tools and design system management. With its cloud-based nature and extensive plugin ecosystem, Figma enhances team productivity and ensures consistent design implementation across projects.\\
+
+\item[6] Cost Estimation
+
+The LOCUS project leverages primarily open-source technologies and cloud infrastructure with a pay-as-you-go pricing model. The following table summarizes the estimated costs for development and deployment:
+
+\begin{table}[H]
+\centering
+\caption{Development and Deployment Cost Estimation}
+\begin{tabular}{|l|l|r|}
+\hline
+\textbf{Category} & \textbf{Item} & \textbf{Monthly Cost (USD)} \\
+\hline
+\multirow{4}{*}{Cloud Infrastructure} & AWS EC2 (t3.medium) & \$30.37 \\
+& AWS S3 Storage (50GB) & \$1.15 \\
+& AWS RDS PostgreSQL (db.t3.micro) & \$15.33 \\
+& Naver Cloud Platform (Server) & \$25.00 \\
+\hline
+\multirow{6}{*}{Development Tools} & GitHub (Free Tier) & \$0.00 \\
+& Visual Studio Code (Free) & \$0.00 \\
+& Docker (Free) & \$0.00 \\
+& Notion (Free Tier) & \$0.00 \\
+& Figma (Free Tier) & \$0.00 \\
+& Python/Node.js/TypeScript (Free) & \$0.00 \\
+\hline
+\multirow{5}{*}{Hardware} & MacBook Pro (M2) - amortized & \$83.33 \\
+& iPhone 13 Pro (LiDAR) - amortized & \$27.78 \\
+& Windows PC - amortized & \$41.67 \\
+& Robot Vacuum Cleaner (test device) & \$138.89 \\
+& Development Workstation & \$0.00 \\
+\hline
+\multirow{2}{*}{AI/ML Frameworks} & TensorFlow/Keras (Open Source) & \$0.00 \\
+& Flower Federated Learning (Open Source) & \$0.00 \\
+\hline
+\textbf{Total Monthly Cost} & & \textbf{\$363.52} \\
+\textbf{Total Annual Cost} & & \textbf{\$4,362.24} \\
+\hline
+\end{tabular}
+\end{table}
+
+\textbf{Cost Breakdown Notes:}
+\begin{itemize}
+    \item \textbf{Cloud Infrastructure}: All cloud services use pay-as-you-go pricing. AWS EC2 hosts the Fastify backend server and MQTT broker. S3 stores 3D home models (.glb files). RDS PostgreSQL manages user data, home structures, and cleaning logs. Naver Cloud Platform hosts the Federated Learning server powered by Flower framework.
+
+    \item \textbf{Development Tools}: All software development tools are either open-source or available under free tiers for educational/small-team use. GitHub provides unlimited public repositories. Visual Studio Code, Docker, Python, Node.js, and TypeScript are entirely free and open-source.
+
+    \item \textbf{Hardware}: Hardware costs are amortized over 36 months assuming typical device lifespans. The MacBook Pro is essential for iOS development with RoomPlan/ARKit. The iPhone 13 Pro provides LiDAR sensors for 3D scanning. The robot vacuum cleaner serves as the edge AI inference platform. Windows PC is used for cross-platform testing.
+
+    \item \textbf{AI/ML Frameworks}: TensorFlow, Keras, and Flower are open-source frameworks with no licensing costs. YOLOv11 and YAMNet models are freely available for research and educational purposes.
+\end{itemize}
+
+\textbf{Scalability Considerations:}
+As the system scales to support more users and devices, cloud infrastructure costs will increase proportionally. However, the pay-as-you-go model ensures costs remain predictable and aligned with actual usage. For production deployment, we estimate costs would scale to approximately \$500-1,000/month to support 100-500 concurrent users with 10-50 active robot devices.
+
+\textbf{Open-Source Advantage:}
+By leveraging open-source technologies (React, Node.js, Python, TensorFlow, PostgreSQL, Docker), the project avoids significant licensing fees associated with proprietary software. This approach reduces the total cost of ownership while maintaining flexibility and community support.
+
+\end{enumerate}
+
+\subsection{Software in use}
+\begin{enumerate}
+
+\item[1] Frameworks
+
+\begin{itemize}
+\item [1)] Fastify\cite{Fastify}
+\begin{figure}[h]
+\hspace{2cm}
+\centering
+\begin{minipage}{0.5\columnwidth}
+    \includegraphics[width=\linewidth]{logo/fastify-Photoroom.png}
+    \caption{Fastify}
+\end{minipage}
+\end{figure}\\
+Fastify is a high-performance web framework for Node.js. In the LOCUS architecture, it serves as the primary backend server, handling API requests from the dashboard and mobile clients. Its low overhead and asynchronous nature make it ideal for processing real-time data streams and managing interactions with the database.\\
+
+\item [2)] React Native\cite{React Native}
+\begin{figure}[h]
+\hspace{2cm}
+\centering
+\begin{minipage}{0.5\columnwidth}
+    \includegraphics[width=\linewidth]{logo/reactnative-Photoroom.png}
+    \caption{React Native}
+\end{minipage}
+\end{figure}\\
+React Native is a cross-platform mobile application framework developed by Facebook that enables developers to build native mobile apps using JavaScript and React. It provides a bridge between JavaScript code and native platform components, allowing for code reuse across iOS and Android while maintaining native performance and user experience. The framework supports hot reloading for rapid development and offers access to native APIs and device features. In the LOCUS project, React Native is used to develop the mobile tracker application that runs on users' smartphones, collecting GPS and IMU data to assist in robot localization.\\
+
+\item [3)] React + Vite\cite{React + Vite}\\
+\begin{figure}[!ht]
+\hspace{2cm}
+\centering
+\begin{minipage}{0.4\columnwidth}
+    \includegraphics[width=\linewidth]{logo/Vite-Photoroom.png}
+    \caption{React + Vite}
+\end{minipage}
+\end{figure}\\ 
+React is a JavaScript library for building user interfaces, while Vite is a modern frontend build tool that provides a fast development experience. This combination is used to build the LOCUS dashboard. React's component-based architecture allows for the creation of interactive UI elements for monitoring robot status, while Vite's Hot Module Replacement (HMR) feature ensures rapid feedback loops during development, significantly improving productivity.\\
+
+\item [4)] Flower\cite{Flower}
+\begin{figure}[!ht]
+\hspace{2cm}
+\centering
+\begin{minipage}{0.4\columnwidth}
+    \includegraphics[width=\linewidth]{logo/flower-Photoroom.png}
+    \caption{Flower}
+\end{minipage}
+\end{figure}\\
+Flower is an open-source federated learning framework designed to enable privacy-preserving distributed machine learning across heterogeneous devices and data silos. It provides a flexible architecture that supports various federated learning strategies including FedAvg, FedProx, and FedPer (Federated Personalization), allowing researchers to customize aggregation algorithms and client selection policies. The framework abstracts away the complexity of network communication and model serialization, enabling seamless coordination between edge devices and central servers via gRPC. In the LOCUS project, Flower orchestrates the federated training process by aggregating Base Layer GRU weights from multiple household edge devices while ensuring that raw sensor data and personalized Head Layers never leave individual homes, thereby preserving user privacy.\\
+\end{itemize}
+
+\item[2] Environment Mapping APIs
+\item [1)] RoomPlan API\cite{RoomPlan API}\\
+\begin{figure}[!ht]
+\hspace{2cm}
+\centering
+\begin{minipage}{0.5\columnwidth}
+    \includegraphics[width=\linewidth]{logo/roomplan-Photoroom.png}
+    \caption{RoomPlan API}
+\end{minipage}
+\end{figure}\\ 
+RoomPlan is a powerful Swift API powered by Apple, designed to create 3D floor plans of indoor spaces using the camera and LiDAR scanner on iOS devices. In the LOCUS project, RoomPlan serves as the core component for Home Structure Intelligence. It actively scans the user's physical environment in real-time, automatically recognizing and classifying structural elements such as walls, windows, doors, and furniture. This technology enables the system to generate a parametric 3D model (USDZ format) of the home, which acts as the semantic map for defining cleaning zones and context.\\
+
+\item [2)] ARKit\cite{ARKit}\\
+\begin{figure}[!ht]
+\hspace{2cm}
+\centering
+\begin{minipage}{0.5\columnwidth}
+    \includegraphics[width=\linewidth]{logo/ARKit-Photoroom.png}
+    \caption{ARKit}
+\end{minipage}
+\end{figure}\\ 
+ARKit is Apple’s advanced augmented reality framework that integrates device motion tracking, camera scene capture, and advanced scene processing. It functions as the foundational layer that powers RoomPlan. In this system, ARKit utilizes Visual Inertial Odometry (VIO) to fuse sensor data from the device’s accelerometer and gyroscope with visual data. This provides precise, real-time localization, allowing the LOCUS system to accurately track the position and orientation of the edge device within the generated 3D map, bridging the gap between the physical home and the digital context model.\\
+
+\item[3] Communication Middleware
+\item [1)] ZeroMQ\cite{ZeroMQ}\\
+\begin{figure}[h]
+\hspace{2cm}
+\centering
+\begin{minipage}{0.5\columnwidth}
+    \includegraphics[width=\linewidth]{logo/zeroMQ-Photoroom.png}
+    \caption{ZeroMQ}
+\end{minipage}
+\end{figure}\\ 
+ZeroMQ is a high-performance asynchronous messaging library that provides socket-like abstractions for various messaging patterns including publish-subscribe, request-reply, and push-pull. It operates at the transport layer, enabling ultra-low-latency inter-process communication without requiring a dedicated message broker. In the LOCUS system, ZeroMQ facilitates real-time data exchange between sensor modules (camera, microphone) and the AI inference engine, ensuring minimal latency for multi-modal data synchronization.\\
+
+\item [2)] MQTT\cite{MQTT}\\
+\begin{figure}[h]
+\hspace{2cm}
+\centering
+\begin{minipage}{0.5\columnwidth}
+    \includegraphics[width=\linewidth]{logo/mqtt-Photoroom.png}
+    \caption{MQTT}
+\end{minipage}
+\end{figure}\\ 
+MQTT (Message Queuing Telemetry Transport) is a lightweight publish-subscribe messaging protocol designed for low-bandwidth, unreliable networks, and is widely used for IoT device communication. In LOCUS, MQTT serves as the messaging backbone between edge devices and cloud services, enabling efficient real-time delivery of pollution predictions, cleaning status updates, and system telemetry to the backend server and web dashboard.\\
+
+\item [3)] gRPC\cite{gRPC}\\
+\begin{figure}[h]
+\hspace{2cm}
+\centering
+\begin{minipage}{0.5\columnwidth}
+    \includegraphics[width=\linewidth]{logo/grpc-Photoroom.png}
+    \caption{gRPC}
+\end{minipage}
+\end{figure}\\
+gRPC is a high-performance, open-source Remote Procedure Call (RPC) framework developed by Google that enables efficient communication between distributed systems. It uses Protocol Buffers (protobuf) for compact binary serialization, significantly reducing message size compared to text-based formats like JSON. Built on HTTP/2, gRPC supports bidirectional streaming, multiplexing, and flow control, making it ideal for low-latency, high-throughput scenarios. In the LOCUS federated learning architecture, gRPC serves as the communication protocol between edge devices and the Flower server hosted on Naver Cloud Platform, facilitating the secure transmission of Base Layer model weights during federated training rounds while maintaining strict privacy guarantees.\\
+
+\item[4] Database
+\item [1)] PostgreSQL\cite{PostgreSQL}\\
+\begin{figure}[h]
+\hspace{2cm}
+\centering
+\begin{minipage}{0.5\columnwidth}
+    \includegraphics[width=\linewidth]{logo/PostgreSQL.png}
+    \caption{PostgreSQL}
+\end{minipage}
+\end{figure}\\ 
+PostgreSQL is a powerful, open-source object-relational database system. It is employed as the central persistent storage for the LOCUS system, storing user profiles, semantic map data, and historical cleaning logs. Its robustness ensures data integrity for the entire platform.\\
+
+\end{enumerate}
+
+\clearpage
+\begin{enumerate}
+
+\item[5] Task Distribution
+
+\begin{table}[H]
+\caption{Role Assignments}
+\def\arraystretch{1.24} \small
+
+\begin{tabular}{|p{1.2cm}|p{1.2cm}|p{5.4cm}|}
+    \hline
+    Tasks & Name & Descriptions \\
+    \hline
+    Project Manager & Lee \par Da Yeon & The Project Manager serves as the operational orchestrator responsible for planning, executing, and ensuring deliverables meet quality standards throughout the project lifecycle. This role manages the development sprints using Agile methodologies and facilitates communication between the AI research team and software engineers to ensure the timely integration of multi-modal features like Federated Learning and AR mapping. \\ \hline
+    
+    UI-UX Designer &  Lee \par Da Yeon, \par Lee \par Seung \par Hwan  & The UI-UX designers utilize Figma to design the interfaces for both the mobile application and the web-based dashboard. They are responsible for determining how screens are presented to maximize user engagement and encourage retention. Once the UI/UX decisions for the app and dashboard are finalized, they are communicated to the frontend developers for implementation. \\ 
+    \hline
+    
+    Frontend Developer & Lee \par Seung \par Hwan  & The Frontend Developer creates the client-side mobile application logic and structure using React Native and TypeScript. This position is responsible for implementing the mobile tracking interface that users interact with directly. Key tasks include optimizing rendering performance for real-time sensor data visualization and ensuring seamless communication with the backend via REST APIs and MQTT protocols. \\ 
+    \hline
+
+    Backend Developer &  Kim \par Jun Hyung, \par Lee \par Seung \par Hwan & The Backend Developer designs and maintains the server-side architecture and database systems using Fastify and PostgreSQL. This role builds robust API endpoints for data exchange and manages the system's core infrastructure. Responsibilities include handling asynchronous messaging via ZeroMQ to synchronize edge devices with the server and ensuring data integrity for user logs and cleaning schedules.\\ 
+    \hline
+
+    Spatial Computing Engineer & Go \par Han Yeong, \par Lee \par Seung \par Hwan  & The Spatial Computing Engineer specializes in processing 3D spatial data and bridging the physical environment with the digital twin. Leveraging ARKit and the RoomPlan API, this engineer implements Visual Inertial Odometry (VIO) for precise indoor localization. The role involves converting LiDAR scan data into semantic 3D maps (USDZ) and handling complex coordinate transformations to align robot positioning with the user's home structure. \\
+    \hline
+    
+    Multi-modal AI Engineer &  Kim \par Jun Hyung, \par Lee \par Seung \par Hwan, \par Go \par Han Yeong & The Multi-modal AI Engineer architects the core intelligence pipeline by synthesizing heterogeneous sensor data. This role implements \textbf{YOLO} and \textbf{YOLO-Pose} for visual context analysis, and \textbf{YAMNet} for acoustic event classification. A critical responsibility is designing the \textbf{TimeSyncBuffer}, which temporally aligns these asynchronous data streams to feed a \textbf{GRU}-based network for precise user behavior prediction. Furthermore, the engineer develops and maintains a \textbf{Federated Learning} framework that continuously personalizes models on edge devices while coordinating secure periodic updates with the central server. \\
+    \hline
+
+
+
+    \end{tabular}
+
+\end{table}
+\end{enumerate}
+
+\section{SPECIFICATIONS}
+
+This section defines the functional specifications of the LOCUS system, organized by feature categories. Each specification describes the technical requirements, user interactions, and implementation details necessary for system operation.
+
+\subsection{Authentication \& User Management Features}
+
+\begin{enumerate}
+    \item[1.] Splash Screen
+\begin{figure}[h]
+\centering
+\begin{minipage}{0.45\linewidth}
+    \includegraphics[width=\linewidth]{app/splash.png}
+    \caption{Entry Page}
+\end{minipage}
+\end{figure}
+
+Upon application launch, a branded startup page is displayed for a duration of 1 to 2 seconds. This screen serves to mask the asynchronous loading of essential data and initialization processes, preventing the display of an empty screen and ensuring a seamless user experience (UX) from the start.
+
+\textbf{Technical Requirements:}
+\begin{itemize}
+    \item Display duration: 1–2 seconds
+    \item Asynchronous data loading during splash screen
+    \item Automatic transition to authentication screen
+\end{itemize}
+
+\end{enumerate}
+
+\begin{enumerate}
+    \item[2.] User Registration (Sign Up)
+
+\begin{figure}[H]
+  \centering
+  \begin{minipage}{0.45\linewidth}
+  \includegraphics[width=\linewidth]{app/signup.png}
+  \caption{Sign-Up Page}
+  \label{fig:signup}
+  \end{minipage}
+\end{figure}
+
+The Sign Up page facilitates new user registration by collecting essential credentials including name, email, and password. To enhance usability and security, the interface incorporates real-time input validation. Visual indicators dynamically change color as the user types, providing immediate feedback on whether the password meets the required complexity standards (length and character variety).
+
+The system implements email verification through the carrier's authentication system to ensure validity and prevent fraudulent registrations. Users must enter a valid email address that will be verified before account creation can proceed.
+
+Furthermore, the interface enforces mandatory consent to the Terms of Service before account creation. The system provides a ``Select All'' option for user convenience, allowing quick acceptance of all required agreements. Users can view the full text of each agreement upon request, ensuring informed consent and regulatory compliance. Account creation is only enabled after all mandatory terms have been explicitly accepted.
+
+\textbf{Technical Requirements:}
+\begin{itemize}
+    \item Required user information: Name, email, password
+    \item Email serves as unique identifier (duplicate check via \texttt{POST /api/auth/check-duplicate})
+    \item Password complexity requirements:
+    \begin{itemize}
+        \item Minimum 8 characters
+        \item Combination of letters, numbers, and special characters
+    \end{itemize}
+    \item Real-time input validation with visual feedback
+    \item Email verification through carrier authentication system
+    \item Mandatory Terms of Service consent
+    \item Password hashing using bcrypt before storage
+    \item Account credentials stored in PostgreSQL via Prisma ORM
+\end{itemize}
+
+\end{enumerate}
+
+
+\begin{enumerate}
+    \item[3.] User Authentication (Log In)
+
+\begin{figure}[h]
+\hspace{1.5cm}
+\centering
+\begin{minipage}{0.4\columnwidth}
+    \includegraphics[height=7cm, width=\linewidth]{app/login.png}
+    \caption{Login Page}
+\end{minipage}
+\end{figure}
+
+The login interface serves as the secure gateway to the application. It provides input fields for email and password authentication, along with a "Forgot Password" option for account recovery. To enhance accessibility, the screen integrates a Gmail OAuth login button, allowing users to sign in instantly using their Google account without manual credential entry. Users can access the sign-up page or initiate password recovery through carrier-based verification if they forget their credentials.
+
+\textbf{Technical Requirements:}
+\begin{itemize}
+    \item Authentication methods:
+    \begin{itemize}
+        \item Email and password credentials (primary)
+        \item OAuth 2.0 via Google Sign-In (alternative)
+    \end{itemize}
+    \item Password validation using bcrypt hash comparison
+    \item JWT token issuance upon successful authentication
+    \item Token storage: Client-side (localStorage or secure storage)
+    \item Token transmission: Authorization header (\texttt{Bearer <token>})
+    \item Session management: Stateless JWT-based authentication
+    \item Password recovery via carrier-based verification
+    \item API endpoint: \texttt{POST /api/auth/login}
+\end{itemize}
+
+\end{enumerate}
+
+\end{enumerate}
+
+\subsection{3D Home Structure Management Features}
+
+\begin{enumerate}
+    \item[1.] Home Management Interface
+
+    \begin{figure}[h]
+    \centering
+    % 왼쪽: 홈 목록 (List)
+    \begin{minipage}{0.48\columnwidth}
+        \centering
+        \includegraphics[width=0.9\linewidth]{app/home3.png}
+        \caption{Home List UI}
+        \label{fig:home_list}
+    \end{minipage}
+    \hfill
+    % 오른쪽: 홈 등록 (Add)
+    \begin{minipage}{0.48\columnwidth}
+        \centering
+        \includegraphics[width=0.8\linewidth]{app/home2.png}
+        \caption{Add New Home}
+        \label{fig:home_add}
+    \end{minipage}
+\end{figure}
+
+The Home interface serves as the central hub for managing multiple spatial environments (e.g., Main House, Parents' House). It employs a card-based UI to display registered homes with real-time metadata, including the number of connected IoT devices and the robot's connectivity status. The system provides real-time status indicators using a color-coded scheme: Green for Active status (robot is connected and operational) and Yellow for Away status (robot is disconnected or unavailable), enabling at-a-glance system monitoring.
+
+Furthermore, the interface supports the registration of new environments. Users can upload a 3D structural file (.glb) generated via Apple RoomPlan, together with the home's address and nickname, which initializes the digital-twin context for the robot.
+
+\textbf{Technical Requirements:}
+\begin{itemize}
+    \item Multi-home support: Users can manage multiple spatial environments
+    \item Home metadata display:
+    \begin{itemize}
+        \item Home name and address
+        \item Number of connected IoT devices
+        \item Robot connectivity status (Active/Away)
+    \end{itemize}
+    \item Color-coded status indicators:
+    \begin{itemize}
+        \item Green: Robot is connected and operational
+        \item Yellow: Robot is disconnected or unavailable
+    \end{itemize}
+    \item 3D model upload:
+    \begin{itemize}
+        \item File format: .glb (generated by Apple RoomPlan API)
+        \item Upload via \texttt{POST /api/homes/\{id\}/model}
+        \item Storage: AWS S3 bucket
+        \item Database persistence: S3 object key stored in PostgreSQL \texttt{Home} table
+    \end{itemize}
+    \item CRUD operations: Create, Read, Update, Delete homes via REST API
+    \item 3D model retrieval: Dashboard fetches models from S3 for visualization
+\end{itemize}
+
+\end{enumerate}
+
+\begin{enumerate}
+    \item[2.] Semantic Zone Labeling
+
+\begin{figure}[h]
+\centering
+\begin{minipage}{0.48\columnwidth}
+    \centering
+    \includegraphics[width=\linewidth]{app/semantic_zones.png}
+    \caption*{(a) Zone Detail View}
+\end{minipage}
+\hfill
+\begin{minipage}{0.48\columnwidth}
+    \centering
+    \includegraphics[width=\linewidth]{app/label_management.png}
+    \caption*{(b) Label Management List}
+\end{minipage}
+\caption{Semantic Zone Labeling Interface}
+\label{fig:semantic_zones}
+\end{figure}
+
+The Semantic Labeling interface enables users to define and customize spatial zones within their home structure, mapping physical 3D coordinates to logical semantic contexts (e.g., Kitchen, Living Room, Bedroom). This interface provides comprehensive label management capabilities including creation, modification, and deletion of zone definitions.
+
+Users interact with an integrated 3D viewer to define zone boundaries by selecting four points that form a polygon. The system automatically captures and stores the $(x, y, z)$ coordinates of each vertex. Each semantic zone can be assigned a custom name and color code, enabling visual differentiation in both the 3D model and 2D floor plan representations.
+
+The interface displays a list of existing labels with their associated coordinates (e.g., living\_room: (-0.8, 1.5, -0.7), kitchen: (-1.0, 1.5, 0.3), balcony: (-0.1, 1.5, -2.3), bedroom: (1.4, 1.5, 2.5)), allowing users to review and modify zone definitions as needed. The label management screen provides a ``+ Add New Label on Floor Plan'' button to create additional zones, and each label entry includes a delete option for removal. This dynamic labeling system ensures that the GRU prediction model can accurately map pollution probabilities to specific household areas, enabling zone-specific cleaning decisions. Real-time label updates are synchronized across all system modules via MQTT to maintain consistency between the mobile application, edge AI inference engine, and web dashboard.
+
+\textbf{Technical Requirements:}
+\begin{itemize}
+    \item Zone definition method: Polygon-based boundary selection
+    \begin{itemize}
+        \item Users select 4+ vertices on 3D floorplan
+        \item System captures $(x, y, z)$ coordinates for each vertex
+    \end{itemize}
+    \item Semantic zone categories: Kitchen, Living Room, Bedroom, Bathroom, Balcony, Entrance, Other (7 total)
+    \item Zone properties:
+    \begin{itemize}
+        \item Zone name (semantic label)
+        \item Polygon vertices (spatial coordinates)
+        \item Color code (visual differentiation)
+    \end{itemize}
+    \item CRUD operations:
+    \begin{itemize}
+        \item Create: \texttt{POST /api/labels}
+        \item Read: \texttt{GET /api/labels?homeId=\{id\}}
+        \item Update: \texttt{PUT /api/labels/\{id\}}
+        \item Delete: \texttt{DELETE /api/labels/\{id\}}
+    \end{itemize}
+    \item Spatial mapping: Point-in-polygon algorithm to map robot $(x, y, z)$ to zone label
+    \item Real-time synchronization: MQTT broadcast to mobile app, robot, and dashboard
+    \item Visualization: Three.js rendering with colored polygon overlays
+    \item Database persistence: \texttt{RoomLabel} table with JSONB vertices field
+\end{itemize}
+
+\end{enumerate}
+
+\end{enumerate}
+
+\subsection{AI Inference \& Prediction Features}
+
+\begin{enumerate}
+    \item[1.] Multi-Modal Sensor Inference
+
+The edge AI system performs real-time inference on heterogeneous sensor modalities to extract contextual features from the robot's environment. Each sensor modality operates independently and publishes results to the TimeSync module via ZeroMQ IPC.
+
+\textbf{Technical Requirements:}
+\begin{itemize}
+    \item \textbf{Visual Inference (YOLOv11n)}:
+    \begin{itemize}
+        \item Model: YOLOv11n for object detection
+        \item Classes: 14 household objects (furniture, pollution sources)
+        \item Output: 14-dimensional float32 vector (object counts per class)
+        \item Inference latency: ≤50ms per frame
+        \item Camera input: Webcam or robot-mounted camera
+    \end{itemize}
+    \item \textbf{Pose Estimation (YOLOv11n-pose)}:
+    \begin{itemize}
+        \item Model: YOLOv11n-pose for human pose detection
+        \item Keypoints: 17 body keypoints × 3 coordinates (x, y, confidence)
+        \item Output: 51-dimensional float32 vector
+        \item Inference latency: ≤60ms per frame
+        \item Use case: Detect human activity patterns
+    \end{itemize}
+    \item \textbf{Audio Classification (YAMNet)}:
+    \begin{itemize}
+        \item Model: YAMNet for environmental sound classification
+        \item Classes: 17 audio events (dishwashing, TV, conversation, etc.)
+        \item Output: 17-dimensional float32 vector (classification probabilities)
+        \item Inference latency: ≤30ms per audio window
+        \item Audio input: Microphone with 1-second windows
+    \end{itemize}
+    \item \textbf{Spatial Context}:
+    \begin{itemize}
+        \item Input: Robot $(x, y, z)$ coordinates from MQTT topic \texttt{home/\{homeId\}/robot/location}
+        \item Processing: Point-in-polygon algorithm maps coordinates to semantic zone
+        \item Output: 7-dimensional one-hot encoded vector (zone categories)
+    \end{itemize}
+    \item \textbf{Temporal Context}:
+    \begin{itemize}
+        \item Input: System timestamp
+        \item Features: Hour, minute, day-of-week (sin/cos), month (sin/cos), is-weekend
+        \item Output: 10-dimensional float32 vector
+    \end{itemize}
+    \item \textbf{ZeroMQ IPC Communication}:
+    \begin{itemize}
+        \item Endpoint: \texttt{ipc:///tmp/locus\_sensors.ipc}
+        \item Pattern: PUB-SUB (sensors publish, TimeSync subscribes)
+        \item Message format: Python dict with \texttt{\{type, data, timestamp, frame\_count\}}
+    \end{itemize}
+\end{itemize}
+
+\item[2.] Temporal Synchronization \& Context Fusion
+
+The TimeSync module collects asynchronous sensor streams and fuses them into unified context vectors using ROS ApproximateTimeSynchronizer algorithm.
+
+\textbf{Technical Requirements:}
+\begin{itemize}
+    \item Synchronization algorithm: ROS ApproximateTimeSynchronizer
+    \begin{itemize}
+        \item Tolerance window: ±500ms (SLOP parameter)
+        \item Queue size: 10 messages per sensor stream
+        \item Timestamp alignment: Match closest timestamps across modalities
+    \end{itemize}
+    \item Context vector fusion:
+    \begin{itemize}
+        \item Input: Visual (14-dim) + Pose (51-dim) + Audio (17-dim) + Spatial (7-dim) + Temporal (10-dim)
+        \item Fusion method: Attention-based context encoder
+        \item Output: 160-dimensional context vector (float32)
+        \item Processing latency: ≤10ms per timestep
+    \end{itemize}
+    \item Sequence buffer:
+    \begin{itemize}
+        \item Buffer size: 30 consecutive context vectors
+        \item Sequence dimensions: 30 timesteps × 160 features
+        \item Update frequency: 1 vector per second
+    \end{itemize}
+\end{itemize}
+
+\item[3.] GRU Pollution Prediction
+
+The GRU model predicts zone-specific pollution probabilities based on 30-second observation windows of multi-modal context.
+
+\textbf{Technical Requirements:}
+\begin{itemize}
+    \item Model architecture:
+    \begin{itemize}
+        \item Input: 30 × 160 sequence (30 timesteps of context vectors)
+        \item Hidden layers: GRU with 128 units (Base Layer) + 64 units (Head Layer)
+        \item Output: 7-dimensional float32 vector (pollution probability per zone)
+        \item Activation: Sigmoid (output range 0.0–1.0)
+    \end{itemize}
+    \item Personalization: FedPer strategy
+    \begin{itemize}
+        \item Base Layer: Frozen (shared across all devices)
+        \item Head Layer: Trainable (personalized per household)
+    \end{itemize}
+    \item Inference:
+    \begin{itemize}
+        \item Latency: ≤100ms per prediction
+        \item Frequency: Every 30 seconds (when buffer is full)
+        \item Framework: TensorFlow/Keras
+    \end{itemize}
+    \item Result publishing:
+    \begin{itemize}
+        \item MQTT topic: \texttt{home/\{homeId\}/prediction/pollution}
+        \item Payload: \texttt{\{predictions: [\{zone, score\}], timestamp, modelVersion\}}
+        \item QoS: 0 (at most once delivery)
+    \end{itemize}
+    \item Cleaning trigger:
+    \begin{itemize}
+        \item Threshold: Pollution score ≥0.5
+        \item Pre-cleaning verification: YOLO detects actual pollution before cleaning
+        \item Post-cleaning reset: Set zone pollution to 0 with \texttt{modelVersion: 'cleaning-reset'}
+    \end{itemize}
+\end{itemize}
+
+\end{enumerate}
+
+\subsection{Federated Learning Features}
+
+\begin{enumerate}
+    \item[1.] Privacy-Preserving Model Training
+
+The federated learning system enables collaborative model improvement across multiple households without transmitting raw sensor data to the cloud.
+
+\textbf{Technical Requirements:}
+\begin{itemize}
+    \item FL framework: Flower (gRPC-based)
+    \item Aggregation strategy: FedAvg (Federated Averaging)
+    \item Personalization: FedPer (Federated Personalization)
+    \begin{itemize}
+        \item Base Layer: Shared parameters aggregated via FedAvg
+        \item Head Layer: Local parameters (not transmitted to server)
+    \end{itemize}
+    \item Privacy guarantees:
+    \begin{itemize}
+        \item Zero raw data transmission (only model gradients)
+        \item Edge-only inference (no camera/audio data leaves device)
+        \item Gradient-based learning (60\% payload reduction via Protocol Buffers)
+    \end{itemize}
+    \item Training workflow:
+    \begin{itemize}
+        \item Server broadcasts global Base Layer weights
+        \item Clients train on local data (5 epochs per round)
+        \item Clients upload Base Layer gradients via gRPC
+        \item Server aggregates updates and saves checkpoint (.npy format)
+    \end{itemize}
+    \item Configuration:
+    \begin{itemize}
+        \item Clients per round: 3 (configurable via \texttt{CLIENTS\_PER\_ROUND})
+        \item Round duration: ≤10 minutes
+        \item Global model distribution: AWS S3
+        \item Checkpoint directory: \texttt{data/fl\_checkpoints/}
+    \end{itemize}
+\end{itemize}
+
+\end{enumerate}
+
+\subsection{Real-time Monitoring \& Dashboard Features}
+
+\begin{enumerate}
+    \item[1.] Mobile App: Pollution Prediction Visualization
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.5\columnwidth]{app/pollution_map.png}
+\caption{Mobile App: AI Pollution Prediction}
+\label{fig:pollution_map}
+\end{figure}
+
+The mobile application provides users with a comprehensive visualization of the robot's current status and AI-driven environmental analysis. The interface renders a 2D floor plan derived from the 3D home structure, overlaying semantic zones with dynamic color-coded indicators.
+
+Each zone displays its predicted pollution probability (0.0–1.0 scale) output by the GRU model. The color coding system uses a three-tier threshold scheme: high-risk zones ($\geq$0.70) are highlighted in red, medium-risk zones (0.40–0.69) in orange, and low-risk zones ($<$0.40) in green. Numerical percentages are displayed alongside the visual indicators to provide precise quantitative feedback.
+
+A bottom sheet or status bar presents the robot's operational status, including its current activity (e.g., "Cleaning Kitchen"), connectivity status (Active/Away), and cleaning progress metrics. Users retain manual control through interactive buttons (Pause, Resume, Stop) to override AI-driven cleaning schedules when necessary. This interface subscribes to WebSocket channels to receive real-time updates, ensuring that status information reflects the robot's actual state with minimal latency.
+
+\textbf{Technical Requirements:}
+\begin{itemize}
+    \item Visualization components:
+    \begin{itemize}
+        \item 2D floorplan rendering (derived from 3D .glb model)
+        \item Color-coded zone overlays with pollution scores
+        \item Robot position marker (real-time updates via MQTT)
+    \end{itemize}
+    \item Color scheme:
+    \begin{itemize}
+        \item Red: High risk (score ≥0.70)
+        \item Orange: Medium risk (0.40 ≤ score < 0.70)
+        \item Green: Low risk (score < 0.40)
+    \end{itemize}
+    \item Robot status display:
+    \begin{itemize}
+        \item Current activity (e.g., "Cleaning Kitchen", "Idle", "Navigating")
+        \item Connectivity status (Active/Away)
+        \item Cleaning progress percentage
+    \end{itemize}
+    \item User controls:
+    \begin{itemize}
+        \item Pause: Temporarily halt cleaning operation
+        \item Resume: Continue paused operation
+        \item Stop: Terminate current cleaning task
+    \end{itemize}
+    \item Real-time updates:
+    \begin{itemize}
+        \item WebSocket subscription to \texttt{NEW\_POLLUTION\_PREDICTION} event
+        \item MQTT subscription to \texttt{home/\{homeId\}/robot/location} topic
+        \item Update latency: <100ms from server event
+    \end{itemize}
+\end{itemize}
+
+    \item[2.] Web Dashboard: Unified AI Monitoring Interface
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{dashboard/dashboard.png}
+\caption{Web Dashboard: Unified AI Monitoring Interface}
+\label{fig:dashboard}
+\end{figure}
+
+The web dashboard provides a unified real-time view of the entire AI inference pipeline, integrating sensor data visualization, processing status monitoring, and pollution prediction results into a single cohesive interface. This comprehensive diagnostic tool enables developers to observe and verify the complete workflow from raw sensor input to final cleaning decisions.
+
+The dashboard interface is divided into two main sections:
+
+\textbf{Section 1 - Real-time Sensor Data Collection:}
+The upper section displays live inference results from all sensor modalities. YOLO object detection results are visualized with bounding boxes overlaid on camera frames, showing detected household items (e.g., table, chair, photo\_frame) with class labels and confidence scores. YOLO-Pose displays the number of detected keypoints (e.g., 68 keypoints detected), enabling observation of human activity patterns. YAMNet audio classification presents the most recent sound events (e.g., telephone 60\%, dishes 42\%, cutlery 21\%) with real-time confidence levels. The coordinate mapping panel shows the transformation of raw $(x, y)$ location coordinates into semantic zone labels (e.g., "Kitchen", "Living Room", or "unknown" if not mapped).
+
+\textbf{Section 2 - AI Inference Pipeline:}
+The lower section presents a three-stage flow diagram of the AI processing pipeline. Stage 1 displays sensor message counts for each modality (visual: 68, pose: 68, audio: 62, location: 0), showing how many data packets have been received from each source. Stage 2 visualizes the TimeSync Buffer status with a circular progress indicator (e.g., 18/30 timesteps collected), indicating readiness for GRU inference. Stage 3 displays zone-specific pollution prediction scores (0.0–1.0 range) with color-coded horizontal bars: balcony 0.62 (red), bedroom 0.35 (orange), living\_room 0.20 (green), kitchen 0.07 (green). Each zone's color changes dynamically according to predefined thresholds (High ≥0.70, Medium 0.40–0.69, Low <0.40).
+
+This integrated visualization enables comprehensive monitoring of sensor synchronization health, AI processing status, and pollution prediction outcomes in a single cohesive view, eliminating the need for separate monitoring interfaces.
+
+\textbf{Technical Requirements:}
+\begin{itemize}
+    \item \textbf{Section 1 - Sensor Data Visualization}:
+    \begin{itemize}
+        \item YOLO Object Detection: Bounding boxes with class labels and confidence scores
+        \item YOLO-Pose: Keypoint count display (e.g., 68 keypoints detected)
+        \item YAMNet Audio: Top-3 sound events with percentage confidence
+        \item Coordinate Mapping: Current zone label or "unknown" status
+        \item Real-time updates via WebSocket (\texttt{SENSOR\_EVENT})
+    \end{itemize}
+    \item \textbf{Section 2 - AI Pipeline Visualization}:
+    \begin{itemize}
+        \item Stage 1 - Sensor Input: Message counters per modality (visual, pose, audio, location)
+        \item Stage 2 - TimeSync Buffer: Circular progress (e.g., 18/30), buffer fill percentage
+        \item Stage 3 - Pollution Prediction: Zone scores with 2 decimal precision, color-coded bars
+    \end{itemize}
+    \item \textbf{Color Coding Thresholds}:
+    \begin{itemize}
+        \item Red: High risk (score ≥0.70)
+        \item Orange: Medium risk (0.40 ≤ score < 0.70)
+        \item Green: Low risk (score < 0.40)
+    \end{itemize}
+    \item \textbf{Real-time Communication}:
+    \begin{itemize}
+        \item WebSocket subscription to \texttt{NEW\_POLLUTION\_PREDICTION} and \texttt{SENSOR\_EVENT}
+        \item Update latency: <100ms from server event
+        \item React-based dashboard with responsive layout
+    \end{itemize}
+\end{itemize}
+
+\end{enumerate}
+
+\section{USE CASES}
+
+This section describes the primary use cases of the LOCUS system from the user's perspective, demonstrating how users interact with the mobile application and web dashboard to enable AI-driven intelligent cleaning.
+
+\subsection{UC1: User Authentication}
+
+\textbf{Actors:} End User
+
+\textbf{Preconditions:} User has installed the LOCUS mobile application or has access to the web dashboard
+
+\textbf{Flow:}
+
+\begin{enumerate}
+    \item \textbf{Sign Up}
+
+    \begin{figure}[h]
+    \hspace{1.5cm}
+    \centering
+    \begin{minipage}{0.4\columnwidth}
+        \includegraphics[height=7cm, width=\linewidth]{app/signup.png}
+        \caption{User Registration}
+    \end{minipage}
+    \end{figure}
+
+    The user creates a new account by providing name, email, and password. The system validates that the email is unique and not already registered. Password requirements are displayed to guide the user in creating a secure password. The user must accept the Terms of Service before proceeding. Upon successful registration, the system confirms account creation and the user can proceed to log in.
+
+    \item \textbf{Log In}
+
+    \begin{figure}[h]
+    \hspace{1.5cm}
+    \centering
+    \begin{minipage}{0.4\columnwidth}
+        \includegraphics[height=7cm, width=\linewidth]{app/login.png}
+        \caption{User Login}
+    \end{minipage}
+    \end{figure}
+
+    The user enters their email and password to log in. Alternatively, the user can choose to sign in using their Google account for faster authentication. The system verifies the credentials and grants access. If credentials are invalid, the system displays an error message. The user can also choose to reset their password if forgotten.
+\end{enumerate}
+
+\textbf{Postconditions:} User is authenticated and can access all application features
+
+\subsection{UC2: Home Management \& 3D Scanning}
+
+\textbf{Actors:} End User with iOS device
+
+\textbf{Preconditions:} User is authenticated and has the mobile application installed
+
+\textbf{Flow:}
+
+\begin{enumerate}
+    \item \textbf{Create New Home}
+
+    \begin{figure}[h]
+    \hspace{1.5cm}
+    \centering
+    \begin{minipage}{0.4\columnwidth}
+        \includegraphics[height=7cm, width=\linewidth]{app/home1.png}
+        \caption{Home List View}
+    \end{minipage}
+    \end{figure}
+
+    The user navigates to the home management screen and selects ``Create New Home''. The system displays a form requesting home information including name and address. The user fills in the information and submits. The system confirms the home has been created successfully.
+
+    \item \textbf{Scan Home Structure}
+
+    The user initiates a 3D scan using the mobile application's scanning feature. The application activates the device's camera and LiDAR sensors. The user walks through each room, pointing the camera at walls, windows, doors, and furniture. The system provides visual feedback showing which areas have been scanned. The system automatically identifies and labels structural elements. When the scan is complete, the user saves the 3D model.
+
+    \item \textbf{Upload 3D Model}
+
+    The application uploads the scanned 3D model to the cloud. The system processes the upload and confirms successful completion. The 3D model becomes available for viewing and zone labeling in both the mobile app and web dashboard.
+\end{enumerate}
+
+\textbf{Postconditions:} The home's 3D structure is saved and ready for semantic zone labeling
+
+\subsection{UC3: Semantic Zone Labeling}
+
+\textbf{Actors:} End User via Web Dashboard or Mobile App
+
+\textbf{Preconditions:} User has created a home with a 3D model
+
+\textbf{Flow:}
+
+\begin{enumerate}
+    \item \textbf{View Zone List}
+
+    \begin{figure}[h]
+    \hspace{1.5cm}
+    \centering
+    \begin{minipage}{0.4\columnwidth}
+        \includegraphics[height=7cm, width=\linewidth]{app/labellist.png}
+        \caption{Semantic Zone List}
+    \end{minipage}
+    \end{figure}
+
+    The user accesses the label management interface. The system displays the 3D home model with existing semantic zones shown as colored areas. Each zone displays its name (e.g., ``Living Room'', ``Kitchen'', ``Bedroom'') and associated information. The user can view all defined zones in a list format.
+
+    \item \textbf{Create New Zone}
+
+    \begin{figure}[h]
+    \hspace{1.5cm}
+    \centering
+    \begin{minipage}{0.4\columnwidth}
+        \includegraphics[height=7cm, width=\linewidth]{app/labelgen.png}
+        \caption{Zone Creation Interface}
+    \end{minipage}
+    \end{figure}
+
+    The user clicks ``Add Zone'' to create a new zone. The system prompts the user to define the zone boundary by selecting points on the 3D floorplan. The user taps or clicks to place boundary points, forming a polygon around the desired area. The user then selects a zone type from available categories (e.g., ``Living Room'', ``Kitchen'', ``Bedroom''). The system saves the zone and displays it on the floorplan with a distinctive color.
+
+    \item \textbf{Edit Existing Zone}
+
+    \begin{figure}[h]
+    \hspace{1.5cm}
+    \centering
+    \begin{minipage}{0.4\columnwidth}
+        \includegraphics[height=7cm, width=\linewidth]{app/labeledit.png}
+        \caption{Zone Editing Interface}
+    \end{minipage}
+    \end{figure}
+
+    The user selects an existing zone from the list or by tapping it on the floorplan. The system displays the zone's current boundaries and label. The user can modify the boundary by dragging the corner points or change the zone name. The user saves the changes. The system updates the zone and the changes are immediately visible on the floorplan.
+\end{enumerate}
+
+\textbf{Postconditions:} Semantic zones are defined and the robot can use them for location awareness and targeted cleaning
+
+\subsection{UC4: Real-time Pollution Monitoring \& Cleaning}
+
+\textbf{Actors:} End User, Robot Vacuum Cleaner
+
+\textbf{Preconditions:} Robot is operational and semantic zones are defined
+
+\textbf{Flow:}
+
+\begin{enumerate}
+    \item \textbf{Environmental Sensing}
+
+    The robot continuously monitors its environment as it moves through the home. It uses its camera to detect objects and potential pollution sources, microphone to recognize household sounds, and location sensors to determine which room it is in. The robot collects this information over time to build a comprehensive understanding of each zone's condition.
+
+    \item \textbf{AI Analysis}
+
+    The robot's onboard AI system analyzes the collected sensor data to identify patterns and environmental context. It combines visual information (what objects are present), audio information (what activities are happening), spatial information (which zone the robot is in), and temporal information (what time of day it is). The system processes this multi-modal data to understand the current state of each zone.
+
+    \item \textbf{Pollution Prediction}
+
+    Based on the environmental analysis, the AI model predicts pollution levels for each zone in the home. The system assigns a pollution probability score to each zone, indicating how likely that zone needs cleaning. These predictions take into account recent activities, detected objects, and learned patterns from past observations.
+
+    \item \textbf{Dashboard Visualization}
+
+    \begin{figure}[h]
+    \hspace{1.5cm}
+    \centering
+    \begin{minipage}{0.4\columnwidth}
+        \includegraphics[height=7cm, width=\linewidth]{app/home2.png}
+        \caption{Real-time Pollution Dashboard}
+    \end{minipage}
+    \end{figure}
+
+    The user opens the mobile app or web dashboard to view pollution predictions. The system displays the home's floorplan with each zone color-coded based on pollution levels: red for high pollution (urgent cleaning needed), orange for medium pollution (cleaning recommended), and green for low pollution (clean). The user can see the robot's current location on the map and view pollution scores for each zone. The display updates in real-time as the robot moves and gathers new information.
+
+    \item \textbf{Autonomous Cleaning}
+
+    When the system detects that a zone's pollution level exceeds the cleaning threshold, it automatically initiates cleaning for that zone. The robot navigates to the identified zone and verifies the pollution level visually before starting. The robot then performs cleaning operations in the zone. Upon completion, the system updates the zone's pollution score to reflect the cleaned state. The user receives notifications about cleaning activities and can view the updated status on the dashboard.
+\end{enumerate}
+
+\textbf{Postconditions:} Pollution levels are monitored, visualized for the user, and cleaning is performed automatically when needed
+\section{ARCHITECTURE DESIGN}
+
+\subsection{Overall Architecture}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{figures/architecture.png}
+\caption{Overall System Architecture}
+\label{fig:architecture}
+\end{figure}
+
+The LOCUS system implements a distributed edge-AI architecture with three-tier deployment: (1) client-side user interfaces, (2) cloud-based backend infrastructure on AWS EC2, and (3) on-device AI inference on robot vacuum cleaners with federated learning coordination. The architecture enforces strict privacy boundaries by processing all raw sensor data (camera frames, audio streams, location coordinates) exclusively on edge devices, while only transmitting aggregated predictions and anonymized model weights to cloud infrastructure.
+
+\subsubsection{System Architecture Overview}
+
+As illustrated in Figure~\ref{fig:architecture}, the system comprises four primary components with distinct responsibilities:
+
+\begin{itemize}
+    \item \textbf{Frontend Client (Home)}: A React-based web dashboard that connects to the AWS cloud backend via standard HTTP/HTTPS REST APIs. The client visualizes real-time pollution predictions received from the MQTT broker, displays 3D home models retrieved from S3 storage, and manages semantic zone labeling. Users interact with the system through this interface to configure cleaning schedules, view historical logs, and monitor robot status.
+
+    \item \textbf{AWS Cloud Backend (APP Backend AWS EC2)}: Hosted on an Ubuntu EC2 instance, this component runs a Node.js Fastify server that orchestrates all cloud-side operations. The backend maintains a PostgreSQL database for persistent storage of user accounts, home metadata, semantic labels, and cleaning logs. It serves 3D home models (.glb files) from an S3 bucket, which are captured via the mobile tracker application using Apple RoomPlan. The integrated MQTT broker facilitates bidirectional communication with edge devices, publishing configuration updates and cleaning commands while subscribing to pollution predictions and telemetry streams. The backend exposes RESTful API endpoints for user authentication (JWT-based), home management, label CRUD operations, and historical data queries.
+
+    \item \textbf{Robot Vacuum Cleaner (Edge AI Module)}: The on-device AI inference pipeline executes entirely on the robot's embedded processor, ensuring zero transmission of raw sensor data to the cloud. The architecture consists of three sub-components: (a) \textbf{Multi-Modal Sensors}: YOLO and YOLO-Pose models process camera frames to detect objects and human poses, YAMNet analyzes microphone audio (WAV format) to classify environmental sounds, and a location sensor provides real-time $(x, y, z)$ coordinates within the home; (b) \textbf{TimeSync Module}: A ZeroMQ-based IPC (Inter-Process Communication) publisher-subscriber system that synchronizes asynchronous sensor streams within ±500ms windows, fusing visual (object/pose labels), audio (sound classifications), and spatial (zone labels derived from coordinates) features into unified timestamped observations; (c) \textbf{ML Engine}: A Python-based inference engine that runs the GRU sequential model to predict zone-specific pollution probabilities based on fused multi-modal context. The ML Engine includes an MQTT client that publishes GRU predictions to the cloud backend and receives configuration updates (cleaning thresholds, zone mappings). Additionally, it hosts a Flower federated learning client that participates in distributed training rounds.
+
+    \item \textbf{Federated Learning Server (FL Server)}: A Flower-based orchestration server that coordinates privacy-preserving model updates across multiple robot devices. The server initiates federated training rounds by broadcasting the current global Base Layer weights to participating Flower clients. Each robot performs local training on its personalized data, then uploads only the Base Layer gradients back to the server. The FL Server aggregates these gradients using the FedAvg algorithm and updates the global model, which is then redistributed to all devices. Critically, the server never receives raw sensor data or personalized Head Layer weights, ensuring that household-specific patterns remain exclusively on-device.
+\end{itemize}
+
+\subsubsection{Communication Protocols}
+
+The system employs multiple communication protocols, each optimized for specific architectural layers and performance requirements as shown in Figure~\ref{fig:architecture}:
+
+\begin{itemize}
+    \item \textbf{ZeroMQ (IPC - Intra-Device)}: Facilitates ultra-low-latency message passing between sensor modules (YOLO, YAMNet, location sensor) and the TimeSync buffer within the Robot Vacuum Cleaner. Implements a publish-subscribe pattern where each sensor acts as an independent publisher, and the TimeSync module subscribes to all sensor streams. This decoupled architecture enables asynchronous multi-modal data fusion with minimal overhead, as all communication occurs via shared memory rather than network sockets.
+
+    \item \textbf{MQTT (Device-to-Cloud)}: Serves as the primary IoT messaging backbone connecting Robot Vacuum Cleaners to the AWS Backend MQTT Broker. The ML Engine's MQTT client publishes pollution prediction results (zone-specific probabilities) and system telemetry (battery status, cleaning progress) to cloud topics. Simultaneously, it subscribes to configuration topics to receive cleaning thresholds, zone mapping updates, and remote control commands from the backend. The lightweight protocol ensures reliable message delivery even under constrained bandwidth conditions typical of home Wi-Fi networks.
+
+    \item \textbf{gRPC (Federated Learning)}: Enables high-throughput bidirectional streaming between Flower Clients (embedded in each robot) and the Flower Server hosted on Naver Cloud Platform. During federated training rounds, the server broadcasts current global Base Layer weights to all participating robots via gRPC streaming RPCs. Each robot trains locally on its private data, then uploads only the Base Layer gradient updates (not raw data) back to the server using Protocol Buffers serialization. The binary encoding reduces network payload by approximately 60\% compared to JSON-based REST APIs, critical for transmitting large neural network weight matrices.
+
+    \item \textbf{REST API (HTTP/HTTPS - Client-to-Cloud)}: Provides standard RESTful endpoints for Frontend Client interactions with the AWS Backend. Users authenticate via JWT tokens obtained through POST /api/auth/login, manage home structures via GET/POST/PUT/DELETE /api/homes/*, configure semantic labels via /api/labels/*, and query historical cleaning logs via /api/logs/*. The backend also serves static 3D home models (.glb files) from S3 storage through GET /api/homes/\{id\}/model endpoints, enabling Three.js-based visualization in the web dashboard.
+
+    \item \textbf{WebSocket (Real-time Updates - Optional)}: While not explicitly shown in the deployment diagram, the system optionally supports WebSocket connections for pushing real-time pollution predictions from the backend to the Frontend Client. This eliminates the need for inefficient HTTP polling when users are actively monitoring the dashboard, reducing latency from several seconds to sub-100ms for live GRU prediction updates.
+\end{itemize}
+
+\subsection{Directory Organization}
+
+The LOCUS project is organized into two main repositories with distinct responsibilities: (1) \texttt{LocationDataLocus} for user-facing applications (mobile tracker, web dashboard, backend server), and (2) \texttt{SE\_G10} for AI inference, model training, and federated learning infrastructure.
+
+\subsubsection{Repository 1: LocationDataLocus}
+
+This repository contains the client-server applications that users directly interact with. It hosts three main components: the React-based web dashboard, the React Native mobile tracker application, and the Node.js Fastify backend server.
+
+\textbf{1) Frontend Dashboard}
+
+The web-based dashboard provides real-time monitoring and system administration interface built with React and Vite. It consists of API clients, page components, reusable UI elements, custom hooks, and utility functions organized in a modular structure.
+
+\begin{table}[H]
+\caption{Frontend Dashboard Directory Structure}
+\def\arraystretch{1.2}
+\footnotesize
+\begin{tabular}{|>{\raggedright\arraybackslash}p{2.6cm}|>{\raggedright\arraybackslash}p{3.5cm}|p{1.4cm}|}
+\hline
+\textbf{Directory} & \textbf{Contents} & \textbf{Tech} \\
+\hline
+\texttt{src/api/} & \texttt{auth.ts, client.ts, devices.ts, homes.ts, labels.ts, logs.ts, types.ts} & Axios, TS \\
+\hline
+\texttt{src/pages/auth/} & \texttt{LoginPage.tsx, RegisterPage.tsx} & React, TS \\
+\hline
+\texttt{src/pages/home/} & \texttt{CreateHomePage.tsx, HomePage.tsx} & React, TS \\
+\hline
+\texttt{src/pages/label/} & \texttt{LabelListPage.tsx} & React, TS \\
+\hline
+\texttt{src/pages/plan/} & \texttt{AIPrediction-}\newline\texttt{Dashboard.tsx,}\newline\texttt{Floorplan3DPage.tsx} & React, TS, Three.js \\
+\hline
+\texttt{src/components/}\newline\texttt{floorplan/} & \texttt{Floorplan3D-}\newline\texttt{View.tsx,}\newline\texttt{RobotMarker.tsx} & React, TS, Three.js \\
+\hline
+\texttt{src/components/} & \texttt{LabelEditor.tsx} & React, TS \\
+\hline
+\texttt{src/components/}\newline\texttt{ui/} & \texttt{button.tsx} & React, TS \\
+\hline
+\texttt{src/hooks/} & \texttt{useRobotTracking.ts} & React, TS \\
+\hline
+\texttt{src/utils/} & \texttt{floorplanUtils.ts} & TS \\
+\hline
+\texttt{LocusClient/} & \texttt{index.html, vite.config.js, tailwind.config.js, package.json} & Vite, Tailwind \\
+\hline
+\end{tabular}
+\end{table}
+
+\textbf{2) Mobile Tracker Application}
+
+The mobile application captures 3D home structure using Apple RoomPlan and ARKit, built with React Native and Expo. It features tab-based navigation, native iOS integration for spatial scanning, and custom hooks for AR tracking and data transmission to the backend server.
+
+\begin{table}[H]
+\caption{Mobile Tracker Application Directory Structure}
+\def\arraystretch{1.2}
+\footnotesize
+\begin{tabular}{|>{\raggedright\arraybackslash}p{2.6cm}|>{\raggedright\arraybackslash}p{3.5cm}|p{1.4cm}|}
+\hline
+\textbf{Directory} & \textbf{Contents} & \textbf{Tech} \\
+\hline
+\texttt{app/(tabs)/} & \texttt{\_layout.tsx, explore.tsx, index.tsx} & React Native, Expo Router \\
+\hline
+\texttt{app/} & \texttt{\_layout.tsx, modal.tsx} & React Native, Expo Router \\
+\hline
+\texttt{components/} & \texttt{external-link.tsx, haptic-tab.tsx, hello-wave.tsx, parallax-scroll-view.tsx, themed-text.tsx, themed-view.tsx} & React Native, TS \\
+\hline
+\texttt{components/ui/} & \texttt{collapsible.tsx, icon-symbol.ios.tsx, icon-symbol.tsx} & React Native, TS \\
+\hline
+\texttt{hooks/} & \texttt{use-color-scheme.ts, use-color-scheme.web.ts, use-theme-color.ts, useExpoARTracking.ts, useRestApiSender.ts, useWebSocketSender.ts} & React Native, TS \\
+\hline
+\texttt{constants/} & \texttt{theme.ts} & TS \\
+\hline
+\texttt{expo-arkit/} & \texttt{iOS native module for RoomPlan integration} & Swift, ARKit \\
+\hline
+\texttt{LocusTrackerExpo/} & \texttt{App.tsx, app.json, package.json} & Expo, React Native \\
+\hline
+\end{tabular}
+\end{table}
+
+\textbf{3) Backend Server}
+
+The backend server manages authentication, data persistence, and real-time communication infrastructure built with Fastify and PostgreSQL. It follows a modular architecture with dedicated modules for authentication, user management, home structure persistence, semantic labeling, cleaning logs, MQTT messaging, and WebSocket communication. Each module implements the controller-route-service pattern for separation of concerns.
+
+\begin{table}[H]
+\caption{Backend Server Directory Structure}
+\def\arraystretch{1.2}
+\footnotesize
+\begin{tabular}{|>{\raggedright\arraybackslash}p{2.6cm}|>{\raggedright\arraybackslash}p{3.5cm}|p{1.4cm}|}
+\hline
+\textbf{Directory} & \textbf{Contents} & \textbf{Tech} \\
+\hline
+\texttt{src/modules/}\newline\texttt{auth/} & \texttt{auth.controller.ts, auth.routes.ts, auth.service.ts} & Fastify, JWT, TS \\
+\hline
+\texttt{src/modules/}\newline\texttt{users/} & \texttt{users.controller.ts, users.routes.ts, users.service.ts} & Fastify, TS \\
+\hline
+\texttt{src/modules/}\newline\texttt{homes/} & \texttt{homes.controller.ts, homes.routes.ts, homes.service.ts} & Fastify, TS \\
+\hline
+\texttt{src/modules/}\newline\texttt{labels/} & \texttt{labels.controller.ts, labels.routes.ts, labels.service.ts} & Fastify, TS \\
+\hline
+\texttt{src/modules/}\newline\texttt{logs/} & \texttt{logs.controller.ts, logs.routes.ts, logs.service.ts} & Fastify, TS \\
+\hline
+\texttt{src/modules/}\newline\texttt{devices/} & \texttt{devices.routes.ts} & Fastify, TS \\
+\hline
+\texttt{src/modules/}\newline\texttt{mqtt/} & \texttt{mqtt.service.ts} & MQTT.js, TS \\
+\hline
+\texttt{src/modules/}\newline\texttt{socket/} & \texttt{socket.service.ts} & Socket.IO, TS \\
+\hline
+\texttt{src/config/} & \texttt{db.ts, env.ts} & Prisma, TS \\
+\hline
+\texttt{src/lib/} & \texttt{eventBus.ts} & TS \\
+\hline
+\texttt{src/} & \texttt{server.ts, app.ts} & Fastify, TS \\
+\hline
+\texttt{prisma/} & \texttt{schema.prisma} & Prisma ORM \\
+\hline
+\texttt{LocusBackend/} & \texttt{docker-compose.yml, package.json} & Docker, Node.js \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Repository 2: SE\_G10 (AI \& Training)}
+
+This repository contains the AI inference pipeline, model training infrastructure, edge device execution logic, and federated learning components. The system implements multi-modal sensor processing (YOLO for vision, YAMNet for audio), context fusion with attention-based encoding, GRU-based sequential prediction, on-device Head Layer personalization, and distributed federated training via the Flower framework.
+
+\textbf{1) AI Module \& Training}
+
+The AI module executes multi-modal on-device inference, temporal synchronization, and pollution prediction workflows. It includes pre-trained model artifacts (YOLO, YAMNet, GRU, Attention Encoder), real-time sensor processing scripts, model training pipelines, and synthetic dataset generation utilities. The \texttt{realtime/} directory contains the edge AI execution engine that runs on robot vacuum cleaners, while the \texttt{training/} directory houses offline model training scripts used to create initial model weights before federated learning deployment.
+
+\begin{table}[H]
+\caption{AI Module \& Training Directory Structure}
+\def\arraystretch{1.2}
+\footnotesize
+\begin{tabular}{|>{\raggedright\arraybackslash}p{2.6cm}|>{\raggedright\arraybackslash}p{3.5cm}|p{1.4cm}|}
+\hline
+\textbf{Directory} & \textbf{Contents} & \textbf{Tech} \\
+\hline
+\texttt{models/audio/} & \texttt{yamnet.tflite, head\_1024\_fp16.tflite} & TFLite \\
+\hline
+\texttt{models/gru/} & \texttt{gru\_model.keras} & Keras \\
+\hline
+\texttt{models/yolo/} & \texttt{best.onnx, best.pt, yolo11n-pose.pt} & ONNX, PyTorch \\
+\hline
+\texttt{models/} & \texttt{attention\_encoder.keras} & Keras \\
+\hline
+\texttt{realtime/} & \texttt{sensor\_visual.py, sensor\_audio.py, sensor\_context.py, gru\_predictor.py, on\_device\_trainer.py, cleaning\_executor.py, decision\_engine.py, zone\_manager.py, mqtt\_client.py, websocket\_bridge.py, launcher.py, full\_launcher.py, test\_sensor\_publisher.py, utils.py} & Python, TF, OpenCV \\
+\hline
+\texttt{training/} & \texttt{train\_gru.py, train\_encoder.py, prepare\_data.py, prepare\_data\_massive.py, config.py, README.md} & Python, TF, NumPy \\
+\hline
+\texttt{src/}\newline\texttt{audio\_recognition/} & \texttt{yamnet\_processor.py} & Python, TFLite \\
+\hline
+\texttt{src/}\newline\texttt{context\_fusion/} & \texttt{attention\_context\_}\newline\texttt{encoder.py,}\newline\texttt{context\_encoder.py,}\newline\texttt{context\_vector.py,}\newline\texttt{context\_database.py} & Python, TF \\
+\hline
+\texttt{src/}\newline\texttt{dataset/} & \texttt{realistic\_dataset\_}\newline\texttt{generator.py,}\newline\texttt{realistic\_action\_}\newline\texttt{patterns.py,}\newline\texttt{generate\_large\_}\newline\texttt{dataset.py,}\newline\texttt{validate\_dataset.py} & Python, NumPy \\
+\hline
+\texttt{src/}\newline\texttt{model/} & \texttt{gru\_model.py} & Python, Keras \\
+\hline
+\texttt{src/}\newline\texttt{spatial\_mapping/} & \texttt{floor\_plan\_manager.py} & Python \\
+\hline
+\texttt{data/} & \texttt{training\_dataset.npz,}\newline\texttt{realistic\_training\_}\newline\texttt{dataset.npz,}\newline\texttt{massive\_dataset\_}\newline\texttt{2000days\_3seeds.npz,}\newline\texttt{raw\_features.npz,}\newline\texttt{test\_dataset.npz,}\newline\texttt{context\_vectors.db} & NumPy, SQLite \\
+\hline
+\end{tabular}
+\end{table}
+
+\textbf{2) Federated Learning \& IoT Gateway Module}
+
+The federated learning module orchestrates privacy-preserving distributed training across multiple edge devices using the Flower framework. It aggregates Base Layer GRU weights via the FedAvg algorithm while ensuring that raw household data and personalized Head Layers never leave individual devices. The IoT Gateway decouples edge AI processing from cloud infrastructure by forwarding metadata via MQTT.
+
+\begin{table}[H]
+\caption{Federated Learning Module Directory Structure}
+\def\arraystretch{1.2}
+\footnotesize
+\begin{tabular}{|>{\raggedright\arraybackslash}p{2.6cm}|>{\raggedright\arraybackslash}p{3.5cm}|p{1.4cm}|}
+\hline
+\textbf{Directory} & \textbf{Contents} & \textbf{Tech} \\
+\hline
+\texttt{packages/}\newline\texttt{federated/} & \texttt{server.py, fl\_utils.py, config.py, run\_fl\_server.py, checkpoint\_utils.py, README.md} & Flower, gRPC, NumPy \\
+\hline
+\texttt{packages/}\newline\texttt{federated/tests/} & \texttt{\_\_init\_\_.py} & Python \\
+\hline
+\texttt{apps/}\newline\texttt{iot-gateway/} & \texttt{bridge\_server.py, README.md, requirements.txt} & Python, MQTT \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Module Implementation Details}
+
+\subsubsection{Module 1: Web Dashboard (React + Vite)}
+
+\textbf{Purpose:} Provides real-time monitoring interface for system administrators and developers to visualize multi-modal AI inference results and manage semantic zones.
+
+\textbf{Key Functionality:}
+\begin{itemize}
+    \item \textbf{3D Visualization (\texttt{Floorplan3DView.tsx})}: Renders home models using Three.js (\texttt{@react-three/fiber}, \texttt{@react-three/drei}). Overlays semantic zone polygons with color-coded pollution indicators. Displays real-time robot position markers synchronized via WebSocket updates.
+    \item \textbf{Robot Position Tracking (\texttt{useRobotTracking.ts})}: Implements HTTP polling mechanism that queries backend's \texttt{GET /api/log/latest} endpoint every 500ms to retrieve robot's current $(x, y, z)$ coordinates. Utilizes \texttt{isPointInPolygon} algorithm to determine which semantic zone the robot currently occupies based on stored polygon boundaries.
+    \item \textbf{Real-time Inference Display (\texttt{AIPredictionDashboard.tsx})}: Subscribes to WebSocket channels (\texttt{Socket.IO-client}) to receive live updates for YOLO bounding boxes, Pose keypoints, YAMNet audio classifications, and GRU pollution predictions. Implements color-coded zone visualization (Red: $\geq$0.70, Orange: 0.40–0.69, Green: $<$0.40).
+    \item \textbf{API Client Layer (\texttt{src/api/*.ts})}: Provides Axios-based REST API abstraction for authentication (\texttt{auth.ts}), home management (\texttt{homes.ts}), semantic labeling (\texttt{labels.ts}), device control (\texttt{devices.ts}), and log retrieval (\texttt{logs.ts}). Implements TypeScript interfaces for type-safe communication (\texttt{types.ts}).
+\end{itemize}
+
+\textbf{Location:} \texttt{LocationDataLocus/LocusClient/}
+
+\textbf{Core Components:}
+\begin{itemize}
+    \item \texttt{src/pages/plan/}: 3D floorplan visualization and AI prediction dashboard
+    \item \texttt{src/api/}: Type-safe REST API clients (auth, homes, labels, devices, logs)
+    \item \texttt{src/hooks/}: Custom React hooks (useRobotTracking with 500ms polling)
+    \item \texttt{src/components/floorplan/}: Three.js-based 3D components and robot markers
+\end{itemize}
+
+\textbf{Technologies:} React 19, Vite 7, TypeScript, Three.js, Socket.IO-client, Axios, Tailwind CSS
+
+\subsubsection{Module 2: Mobile Tracker (React Native + Expo)}
+
+\textbf{Purpose:} Captures 3D home structure using Apple RoomPlan and ARKit, uploads spatial data to backend, and provides real-time location tracking for robot localization via dual communication channels (WebSocket + REST API).
+
+\textbf{Key Functionality:}
+\begin{itemize}
+    \item \textbf{ARKit Integration (\texttt{useExpoARTracking.ts})}: Interfaces with native Swift module (\texttt{ExpoArkit}) via \texttt{expo-modules-core}. Subscribes to \texttt{onARFrame} events using EventEmitter pattern to receive real-time ARKit tracking data (position, accuracy, yaw, timestamp). Implements Visual Inertial Odometry (VIO) for precise indoor localization. Provides session control methods (\texttt{startSession, stopSession, resetOrigin}) with automatic cleanup on component unmount.
+    \item \textbf{WebSocket Communication (\texttt{useWebSocketSender.ts})}: Establishes persistent bidirectional connection to backend server. Sends client identification message (\texttt{type: 'identify', clientType: 'tracker'}) upon connection. Transmits \texttt{arkit\_location} messages containing 3D position, accuracy, and timestamp. Implements automatic reconnection with configurable interval (default 3000ms). Handles http/https to ws/wss protocol conversion automatically.
+    \item \textbf{REST API Transmission (\texttt{useRestApiSender.ts})}: Provides fire-and-forget HTTP POST mechanism for location data persistence. Implements throttling with configurable interval (default 200ms, ~5Hz) to prevent server overload. Generates local random client ID for session tracking. Constructs payload matching backend \texttt{LogRecord} schema (clientId, receivedAt, timestamp, accuracy, position3D).
+    \item \textbf{RoomPlan Scanning (\texttt{expo-arkit/})}: Utilizes Apple RoomPlan API to capture LiDAR-based 3D scans of indoor spaces. Automatically classifies structural elements (walls, windows, doors, furniture). Exports parametric 3D models in .glb format for backend upload and semantic zone definition.
+\end{itemize}
+
+\textbf{Location:} \texttt{LocationDataLocus/LocusTrackerExpo/}
+
+\textbf{Core Components:}
+\begin{itemize}
+    \item \texttt{hooks/}: Custom React Native hooks (useExpoARTracking, useWebSocketSender, useRestApiSender)
+    \item \texttt{expo-arkit/}: Native iOS Swift module with ARKit/RoomPlan bridge
+    \item \texttt{app/(tabs)/}: Tab-based navigation screens (Expo Router)
+    \item \texttt{components/}: Reusable UI components and themed elements
+\end{itemize}
+
+\textbf{Technologies:} React Native 0.81, Expo 54, ARKit, RoomPlan API, Expo Router, Swift (Native Modules), WebSocket, Axios
+
+\subsubsection{Module 3: Backend Server (Fastify + PostgreSQL)}
+
+\textbf{Purpose:} Manages user authentication, home structure metadata persistence, cleaning logs, real-time communication infrastructure, and bidirectional IoT messaging via MQTT and WebSocket protocols.
+
+\textbf{Key Functionality:}
+\begin{itemize}
+    \item \textbf{Server Integration (\texttt{server.ts})}: Orchestrates Fastify HTTP server with Socket.IO attachment on the same port (default 8080). Initializes Socket.IO with CORS configuration (\texttt{origin: "*"} for development). Connects to PostgreSQL via Prisma ORM and establishes MQTT broker connection during startup. Implements graceful shutdown handlers (SIGTERM, SIGINT) for resource cleanup.
+    \item \textbf{MQTT Service (\texttt{mqtt.service.ts})}: Subscribes to topics (\texttt{home/+/prediction/pollution}, \texttt{home/+/cleaning/\#}, \texttt{edge/+/status}) to receive AI predictions and cleaning status from edge devices. Publishes robot location updates to \texttt{home/\{homeId\}/robot/location} with QoS 0 for low-latency transmission. Implements \texttt{handlePollutionPrediction} to persist zone-specific pollution probabilities to \texttt{PollutionPrediction} table. Emits \texttt{NEW\_POLLUTION\_PREDICTION} events via EventBus for WebSocket broadcast. Processes cleaning completion events and resets zone pollution scores to 0 with \texttt{modelVersion: 'cleaning-reset'}.
+    \item \textbf{Location Logging (\texttt{logs.controller.ts, logs.service.ts})}: Implements \texttt{bufferLocationLog} to accept location data from mobile tracker via \texttt{POST /api/log/record}. Provides \texttt{GET /api/log/latest} endpoint for HTTP polling by dashboard (500ms interval). Queries \texttt{SensorEvent} table for today's cleaning timeline with date filtering (00:00–23:59). Retrieves latest pollution predictions per zone using parallel \texttt{Promise.all} queries with \texttt{orderBy: \{predictionTime: 'desc'\}} for performance optimization.
+    \item \textbf{Socket.IO EventBus (\texttt{socket.service.ts, lib/eventBus.ts})}: Listens to internal EventBus events (\texttt{NEW\_POLLUTION\_PREDICTION}, \texttt{NEW\_SENSOR\_EVENT}) triggered by MQTT handlers. Broadcasts updates to connected dashboard clients via Socket.IO rooms segmented by \texttt{homeId}. Enables real-time UI updates without polling overhead.
+    \item \textbf{Authentication \& Authorization (\texttt{auth.controller.ts})}: Implements JWT-based email/password authentication with bcrypt password hashing. Integrates Gmail OAuth for third-party login. Issues signed tokens with configurable expiration for stateless session management.
+\end{itemize}
+
+\textbf{Location:} \texttt{LocationDataLocus/LocusBackend/}
+
+\textbf{Core Components:}
+\begin{itemize}
+    \item \texttt{src/modules/mqtt/}: MQTT client with EventBus integration (QoS 0, topic routing)
+    \item \texttt{src/modules/logs/}: Location buffering, HTTP polling endpoint, timeline queries
+    \item \texttt{src/modules/socket/}: Socket.IO server with homeId-based room broadcasting
+    \item \texttt{src/modules/auth/}: JWT authentication, bcrypt hashing, OAuth integration
+    \item \texttt{src/lib/eventBus.ts}: Event-driven architecture for decoupled module communication
+    \item \texttt{prisma/schema.prisma}: Database schema (User, Home, RoomLabel, PollutionPrediction, SensorEvent)
+\end{itemize}
+
+\textbf{Technologies:} Fastify 5, TypeScript, Prisma ORM, PostgreSQL, JWT, MQTT.js (QoS 0), Socket.IO, EventBus pattern
+
+\subsubsection{Module 4: AI Module \& Training (Python Edge AI)}
+
+\textbf{Purpose:} Executes multi-modal on-device AI inference, temporal synchronization, pollution prediction, and model training workflows without transmitting raw sensor data to cloud servers.
+
+\textbf{Key Functionality:}
+\begin{itemize}
+    \item \textbf{Visual Context (\texttt{sensor\_visual.py})}: Runs YOLOv11n for object detection (14 classes: furniture, pollution objects) and YOLOv11n-pose for human pose estimation (17 keypoints × 3 coordinates = 51-dimensional feature vector). Publishes results to ZeroMQ IPC endpoint. Provides Flask MJPEG streaming server for real-time visualization.
+    \item \textbf{Audio Context (\texttt{sensor\_audio.py})}: Classifies household sounds using YAMNet TFLite model (17-dimensional feature vector for events like dishwashing, TV audio, conversation). Processes microphone input and publishes audio features via ZeroMQ.
+    \item \textbf{Context Fusion (\texttt{sensor\_context.py + src/context\_fusion/})}: Implements attention-based encoder (\texttt{attention\_context\_encoder.py}) to fuse multi-modal features (visual, audio, pose, spatial, temporal) into a unified 160-dimensional context vector. Stores context history in SQLite database (\texttt{context\_database.py}).
+    \item \textbf{GRU Predictor (\texttt{gru\_predictor.py})}: Implements ROS ApproximateTimeSynchronizer algorithm for sensor fusion with ±500ms tolerance (SLOP). Maintains per-sensor message queues (QUEUE\_SIZE=10) to align asynchronous data streams. Collects 30 timesteps of 160-dimensional context vectors in TimeSyncBuffer. Runs FedPer GRU model to predict zone-specific pollution probabilities (0.0–1.0 scale). Integrates CleaningExecutor, MQTT client, ZoneManager, and OnDeviceTrainer for end-to-end autonomous operation.
+    \item \textbf{On-Device Trainer (\texttt{on\_device\_trainer.py})}: Fine-tunes FedPer Head Layer while keeping Base Layer frozen. Collects prediction-feedback pairs in deque buffer (max 300 samples). Triggers background thread training when buffer accumulates 100+ samples. Executes 5 training epochs with MSE loss, batch size 16, learning rate 0.0005, and 80/20 train-validation split. Auto-saves personalized model and publishes training status via MQTT.
+    \item \textbf{Cleaning Executor (\texttt{cleaning\_executor.py})}: Implements threshold-based cleaning decisions (pollution ≥ 0.5). Performs pre-cleaning YOLO verification to measure actual pollution scores. Executes cleaning operations and reports status via MQTT and WebSocket. Provides feedback loop for on-device learning.
+    \item \textbf{Model Training (\texttt{training/train\_gru.py, train\_encoder.py})}: Offline training scripts for GRU Base Layer and attention-based context encoder. Implements data preparation pipeline (\texttt{prepare\_data.py, prepare\_data\_massive.py}) for generating realistic household activity datasets with temporal patterns.
+\end{itemize}
+
+\textbf{Location:} \texttt{SE\_G10/}
+
+\textbf{Core Components:}
+\begin{itemize}
+    \item \texttt{models/}: Pre-trained model files (YOLOv11n .pt/.onnx, YAMNet .tflite, GRU .keras, attention\_encoder .keras)
+    \item \texttt{realtime/}: Real-time inference engines (sensor\_visual.py, sensor\_audio.py, sensor\_context.py, gru\_predictor.py, on\_device\_trainer.py, cleaning\_executor.py, decision\_engine.py, zone\_manager.py, mqtt\_client.py, websocket\_bridge.py)
+    \item \texttt{training/}: Model training scripts (train\_gru.py, train\_encoder.py, prepare\_data.py, config.py)
+    \item \texttt{src/}: Core modules (audio\_recognition/, context\_fusion/, dataset/, model/, spatial\_mapping/)
+    \item \texttt{data/}: Training datasets (training\_dataset.npz, realistic\_training\_dataset.npz, massive\_dataset\_2000days\_3seeds.npz, context\_vectors.db)
+\end{itemize}
+
+\textbf{Technologies:} Python 3, TensorFlow/Keras, YOLOv11 (Ultralytics), YAMNet TFLite, OpenCV, NumPy, ZeroMQ (IPC), Flask (MJPEG streaming), SQLite
+
+\subsubsection{Module 5: Federated Learning Server (Flower)}
+
+\textbf{Purpose:} Orchestrates privacy-preserving federated training by aggregating Base Layer GRU weights from multiple edge devices without accessing raw household data or personalized Head Layers.
+
+\textbf{Key Functionality:}
+\begin{itemize}
+    \item \textbf{Custom FedAvg Strategy (\texttt{LocusFedAvg})}: Extends Flower's base \texttt{FedAvg} class to implement custom aggregation logic with event logging. Loads initial Base Layer weights from \texttt{.npy} checkpoint file using \texttt{np.load(allow\_pickle=True)} and converts to Flower \texttt{Parameters} format via \texttt{ndarrays\_to\_parameters}. Sets \texttt{fraction\_fit=1.0, fraction\_evaluate=1.0} to select all available clients per round. Enforces minimum client requirements (\texttt{min\_fit\_clients}, \texttt{min\_available\_clients}) configured via \texttt{CLIENTS\_PER\_ROUND}.
+    \item \textbf{Federated Round Coordination (\texttt{configure\_fit})}: Attaches \texttt{server\_round} metadata to each client's \texttt{FitIns.config} dictionary for round-aware training. Logs \texttt{round\_start} event with target client IDs (\texttt{client.cid}) via \texttt{log\_fl\_event}. Distributes global Base Layer weights to selected clients via gRPC channels.
+    \item \textbf{Weight Aggregation (\texttt{aggregate\_fit})}: Receives client updates as \texttt{FitRes} objects containing serialized NumPy weights and training metrics (\texttt{train\_loss}, \texttt{val\_loss}, \texttt{val\_acc}). Logs each \texttt{update\_received} event with per-client metrics. Computes weighted average using Flower's built-in \texttt{super().aggregate\_fit()} based on \texttt{num\_examples}. Converts aggregated \texttt{Parameters} back to NumPy arrays via \texttt{parameters\_to\_ndarrays}.
+    \item \textbf{Checkpoint Persistence}: Saves aggregated weights to \texttt{results/fl\_global/round\_\{N\}.npy} using \texttt{np.save} with \texttt{dtype=object, allow\_pickle=True} to preserve heterogeneous layer shapes. Computes average validation loss across clients using \texttt{\_average\_metric} helper. Emits \texttt{round\_agg} and \texttt{round\_end} events for monitoring.
+    \item \textbf{Privacy Guarantee}: Only exchanges Base Layer weights (NumPy arrays) via gRPC. Raw sensor data, context vectors, and personalized Head Layers remain exclusively on edge devices and are never transmitted to the server.
+\end{itemize}
+
+\textbf{Location:} \texttt{LOCUS/packages/federated/}
+
+\textbf{Core Components:}
+\begin{itemize}
+    \item \texttt{server.py}: \texttt{LocusFedAvg} strategy (FedAvg + event logging + .npy checkpoints)
+    \item \texttt{fl\_utils.py}: \texttt{log\_fl\_event} function for structured FL telemetry
+    \item \texttt{config.py}: FL hyperparameters (CLIENTS\_PER\_ROUND, SERVER\_ROUNDS, LR, BATCH\_SIZE)
+    \item \texttt{run\_fl\_server.py}: Flower server entrypoint for Naver Cloud deployment
+    \item \texttt{checkpoint\_utils.py}: Weight serialization/deserialization utilities
+\end{itemize}
+
+\textbf{Technologies:} Flower 1.x (gRPC), Python 3, NumPy (ndarrays\_to\_parameters, parameters\_to\_ndarrays), Naver Cloud Platform
+
+\subsubsection{Module 6: IoT Gateway (Python Bridge)}
+
+\textbf{Purpose:} Decouples edge AI module from cloud backend by forwarding metadata and status updates via MQTT protocol, enabling separation between on-device inference and cloud infrastructure.
+
+\textbf{Key Functionality:}
+\begin{itemize}
+    \item \textbf{MQTT Bridge (\texttt{bridge\_server.py})}: Establishes persistent connections to both local edge AI module and remote cloud MQTT broker (AWS IoT Core). Implements bidirectional message routing between on-device AI inference engine and backend server. Subscribes to local topics (\texttt{home/+/prediction/pollution}, \texttt{home/+/cleaning/\#}) to receive AI predictions and cleaning status. Publishes forwarded messages to cloud broker for persistence and dashboard visualization.
+    \item \textbf{Command Forwarding}: Receives cleaning commands and configuration updates from cloud backend. Translates cloud-originated MQTT messages to local topic format for edge AI consumption. Enables remote control of edge devices while maintaining privacy boundaries.
+    \item \textbf{Connection Management}: Implements automatic reconnection logic with exponential backoff for both local and cloud MQTT connections. Monitors connection health via keep-alive messages and timeout detection. Queues messages during network interruptions for guaranteed delivery when connection is restored.
+    \item \textbf{Asynchronous Event Loop}: Utilizes Python \texttt{asyncio} for non-blocking concurrent processing of MQTT messages from multiple sources. Prevents message loss during high-throughput scenarios (e.g., real-time pollution prediction updates).
+\end{itemize}
+
+\textbf{Location:} \texttt{LOCUS/apps/iot-gateway/}
+
+\textbf{Core Components:}
+\begin{itemize}
+    \item \texttt{bridge\_server.py}: Bidirectional MQTT bridge (local edge ↔ cloud broker)
+    \item \texttt{requirements.txt}: Python dependencies (paho-mqtt, asyncio)
+\end{itemize}
+
+\textbf{Technologies:} Python 3, MQTT (paho-mqtt), asyncio, AWS IoT Core, Topic routing pattern
+
+\section{DISCUSSION}
+
+This section reflects on the key achievements, technical challenges, current limitations, and future directions of the LOCUS system.
+
+\subsection{Key Achievements}
+
+The LOCUS system successfully demonstrates several significant achievements in edge AI and privacy-preserving intelligent cleaning:
+
+\textbf{Privacy-First Edge AI Architecture:} By performing all AI inference on edge devices (robot vacuum cleaners), the system ensures that raw sensor data—including camera frames, audio recordings, and location coordinates—never leaves the device. Only aggregated predictions and model gradients are transmitted to cloud infrastructure, addressing growing privacy concerns in smart home environments.
+
+\textbf{Multi-Modal Context Fusion:} The system integrates heterogeneous sensor modalities (visual, audio, spatial, temporal, and pose) into unified context representations. The attention-based fusion mechanism enables the GRU model to learn complex correlations between environmental factors and pollution patterns, achieving more accurate predictions than single-modality approaches.
+
+\textbf{Personalized Federated Learning:} The implementation of FedPer (Federated Personalization) allows each household to maintain a personalized Head Layer while benefiting from shared knowledge in the Base Layer. This approach balances generalization across diverse homes with adaptation to individual household patterns, improving prediction accuracy without compromising privacy.
+
+\textbf{Real-Time Visualization Infrastructure:} The unified web dashboard provides developers and users with comprehensive real-time monitoring of the entire AI pipeline, from raw sensor inputs to final pollution predictions. This transparency facilitates debugging, system verification, and user trust.
+
+\subsection{Technical Challenges Encountered}
+
+Several technical challenges were addressed during the development of LOCUS:
+
+\textbf{Temporal Synchronization:} Synchronizing asynchronous multi-modal sensor streams posed a significant challenge due to varying inference latencies (YOLOv11n: 50ms, YOLOv11n-pose: 60ms, YAMNet: 30ms) and network delays. The ROS ApproximateTimeSynchronizer algorithm with a ±500ms tolerance window successfully aligns sensor data, but edge cases (e.g., rapid zone transitions) occasionally result in misaligned context vectors.
+
+\textbf{3D Spatial Mapping Accuracy:} While Apple RoomPlan provides high-quality 3D scans, mapping robot coordinates to semantic zones requires careful calibration. Coordinate system transformations between the RoomPlan frame and the robot's localization system introduce small errors (<10cm). The point-in-polygon algorithm handles most cases, but boundary ambiguity can cause zone misclassification near edges.
+
+\textbf{Real-Time Inference Constraints:} Maintaining low-latency inference (GRU prediction ≤100ms) on resource-constrained edge devices required careful model optimization. The 30-timestep sequence buffer (30 × 160 dimensions) and attention-based encoder presented computational bottlenecks, necessitating efficient matrix operations and selective quantization.
+
+\textbf{Federated Learning Convergence:} Coordinating federated learning across distributed edge devices with heterogeneous data distributions (different household patterns) required tuning hyperparameters (learning rate, aggregation frequency, clients per round). Balancing convergence speed with communication overhead remains an ongoing optimization challenge.
+
+\subsection{Current Limitations}
+
+Despite its achievements, the LOCUS system has several limitations that should be acknowledged:
+
+\textbf{Platform Dependency:} The 3D scanning functionality relies on Apple RoomPlan API, which is exclusive to iOS devices with LiDAR sensors (iPhone 12 Pro and later, iPad Pro). This limits accessibility for Android users and older iOS devices, restricting the system's potential user base.
+
+\textbf{Limited Object Recognition:} The current YOLOv11n model is trained on 14 household object classes. While this covers common furniture and pollution sources, it may not detect specialized items or region-specific objects. Expanding the object taxonomy requires additional labeled training data and model retraining.
+
+\textbf{Minimum Federated Learning Participants:} The federated learning system requires a minimum of 3 concurrent participants per round (configurable via \texttt{CLIENTS\_PER\_ROUND}). In scenarios with fewer active devices, training progress stalls. This limitation affects early deployment phases and low-adoption regions.
+
+\textbf{Static Zone Definitions:} Once semantic zones are defined, the system does not automatically adapt to home reconfigurations (e.g., furniture rearrangement, room repurposing). Users must manually update zone boundaries through the dashboard, which may be inconvenient for dynamic environments.
+
+\textbf{Single-Robot Scenarios:} The current implementation assumes one robot per home. Multi-robot coordination (e.g., multiple vacuum cleaners collaborating) is not supported, limiting scalability for large homes or commercial environments.
+
+\subsection{Future Work}
+
+Several research directions could extend and improve the LOCUS system:
+
+\textbf{Cross-Platform 3D Scanning:} Developing Android-compatible 3D scanning using ARCore or photogrammetry techniques would broaden accessibility. Exploring WebXR-based scanning in mobile browsers could provide platform-agnostic solutions, though accuracy trade-offs must be evaluated.
+
+\textbf{Expanded Object Recognition:} Incorporating larger object detection models (e.g., YOLOv11m/l) or vision-language models (e.g., CLIP) could enable open-vocabulary object detection, allowing users to specify custom objects of interest (e.g., ``detect pet toys''). Transfer learning from large-scale datasets (COCO, Open Images) could improve generalization.
+
+\textbf{Online Learning and Adaptation:} Implementing continual learning mechanisms would allow the GRU model to adapt to changing household patterns without requiring full federated learning rounds. Meta-learning approaches could enable rapid adaptation to new homes with minimal data.
+
+\textbf{Multi-Robot Coordination:} Extending the system to support multiple robots per home requires distributed task allocation, collision avoidance, and collaborative SLAM. Multi-agent reinforcement learning could optimize cleaning schedules across fleets of robots.
+
+\textbf{Dynamic Zone Adaptation:} Leveraging computer vision to automatically detect room reconfigurations (e.g., furniture moved, rooms repurposed) would reduce manual intervention. Change detection algorithms could trigger zone boundary updates when significant spatial changes are observed.
+
+\textbf{Energy-Aware Scheduling:} Integrating energy consumption models and time-of-use electricity pricing could optimize cleaning schedules to minimize costs while maintaining cleanliness. Reinforcement learning policies could balance cleaning effectiveness with energy efficiency.
+
+\textbf{Explainable AI Dashboard:} Enhancing the dashboard with explainability features (e.g., attention weight visualization, counterfactual examples) would help users understand why specific zones receive high pollution scores, increasing trust and enabling informed manual overrides.
+
+\subsection{Lessons Learned}
+
+The development of LOCUS yielded valuable insights for future edge AI and federated learning projects:
+
+\textbf{Privacy as a First-Class Requirement:} Designing privacy constraints from the outset (rather than retrofitting) simplified architecture decisions and prevented data leakage vulnerabilities. Clear boundaries between edge and cloud processing eliminated ambiguity in data handling policies.
+
+\textbf{Importance of Developer Tools:} The unified web dashboard proved invaluable for debugging multi-modal sensor fusion and temporal synchronization issues. Investing in comprehensive visualization tools early in development accelerated troubleshooting and validation.
+
+\textbf{User-Centric Zone Labeling:} Allowing users to define custom semantic zones (rather than imposing predefined room types) improved system flexibility and user satisfaction. However, providing intelligent suggestions (e.g., auto-detecting likely room types based on geometry) could reduce onboarding friction.
+
+\textbf{Federated Learning Trade-offs:} While federated learning preserves privacy, it introduces communication overhead and convergence challenges. For future projects, carefully evaluating whether on-device learning suffices (without federation) could simplify deployment in scenarios with limited network connectivity.
+
+\begin{thebibliography}{99}
+
+\bibitem{apple_homekit}
+Apple Inc., "HomeKit Framework," [Online]. Available: https://developer.apple.com/homekit/. Accessed: Dec. 2024.
+
+\bibitem{apple_roomplan}
+Apple Inc., "RoomPlan API," [Online]. Available: https://developer.apple.com/augmented-reality/roomplan/. Accessed: Dec. 2024.
+
+\bibitem{apple_arkit}
+Apple Inc., "ARKit - Augmented Reality," [Online]. Available: https://developer.apple.com/augmented-reality/arkit/. Accessed: Dec. 2024.
+
+\bibitem{irobot_roomba}
+iRobot Corporation, "Roomba Robot Vacuums," [Online]. Available: https://www.irobot.com/roomba. Accessed: Dec. 2024.
+
+\bibitem{roborock}
+Roborock Technology Co., Ltd., "Roborock Robot Vacuum and Mop," [Online]. Available: https://global.roborock.com/. Accessed: Dec. 2024.
+
+\bibitem{google_home}
+Google LLC, "Google Home: Make Your Home Smarter," [Online]. Available: https://home.google.com/. Accessed: Dec. 2024.
+
+\bibitem{bonawitz2019tensorflow}
+K. Bonawitz et al., "Towards Federated Learning at Scale: System Design," in \textit{Proceedings of Machine Learning and Systems}, vol. 1, pp. 374-388, 2019.
+
+\bibitem{arivazhagan2019federated}
+M. G. Arivazhagan, V. Aggarwal, A. K. Singh, and S. Choudhary, "Federated learning with personalization layers," \textit{arXiv preprint arXiv:1912.00818}, 2019.
+
+\bibitem{mcmahan2017fedavg}
+H. B. McMahan, E. Moore, D. Ramage, S. Hampson, and B. A. y Arcas, "Communication-Efficient Learning of Deep Networks from Decentralized Data," in \textit{Proceedings of the 20th International Conference on Artificial Intelligence and Statistics (AISTATS)}, 2017.
+
+\bibitem{yolov11}
+Ultralytics, "YOLOv11: State-of-the-Art Object Detection," [Online]. Available: https://docs.ultralytics.com/models/yolo11/. Accessed: Dec. 2024.
+
+\bibitem{yamnet}
+Google Research, "YAMNet: Audio Event Detection," [Online]. Available: https://www.tensorflow.org/hub/tutorials/yamnet. Accessed: Dec. 2024.
+
+\bibitem{flower}
+D. J. Beutel et al., "Flower: A Friendly Federated Learning Framework," \textit{arXiv preprint arXiv:2007.14390}, 2020. [Online]. Available: https://flower.ai/
+
+\bibitem{tensorflow}
+M. Abadi et al., "TensorFlow: A System for Large-Scale Machine Learning," in \textit{12th USENIX Symposium on Operating Systems Design and Implementation (OSDI)}, 2016, pp. 265-283.
+
+\bibitem{keras}
+F. Chollet et al., "Keras," [Online]. Available: https://keras.io. Accessed: Dec. 2024.
+
+\bibitem{numpy}
+C. R. Harris et al., "Array programming with NumPy," \textit{Nature}, vol. 585, no. 7825, pp. 357-362, 2020.
+
+\bibitem{react}
+Meta Open Source, "React: A JavaScript Library for Building User Interfaces," [Online]. Available: https://react.dev/. Accessed: Dec. 2024.
+
+\bibitem{React Native}
+Meta Open Source, "React Native: Learn once, write anywhere," [Online]. Available: https://reactnative.dev/. Accessed: Dec. 2024.
+
+\bibitem{expo}
+Expo, "Expo: An Open-Source Platform for Making Universal Native Apps," [Online]. Available: https://expo.dev/. Accessed: Dec. 2024.
+
+\bibitem{threejs}
+Three.js, "JavaScript 3D Library," [Online]. Available: https://threejs.org/. Accessed: Dec. 2024.
+
+\bibitem{React + Vite}
+Vite, "Vite: Next Generation Frontend Tooling," [Online]. Available: https://vitejs.dev/. Accessed: Dec. 2024.
+
+\bibitem{Typescript}
+Microsoft, "TypeScript: JavaScript With Syntax For Types," [Online]. Available: https://www.typescriptlang.org/. Accessed: Dec. 2024.
+
+\bibitem{Fastify}
+Fastify, "Fastify: Fast and Low Overhead Web Framework for Node.js," [Online]. Available: https://fastify.dev/. Accessed: Dec. 2024.
+
+\bibitem{nodejs}
+OpenJS Foundation, "Node.js: JavaScript Runtime," [Online]. Available: https://nodejs.org/. Accessed: Dec. 2024.
+
+\bibitem{postgresql}
+The PostgreSQL Global Development Group, "PostgreSQL: The World's Most Advanced Open Source Relational Database," [Online]. Available: https://www.postgresql.org/. Accessed: Dec. 2024.
+
+\bibitem{prisma}
+Prisma Data, Inc., "Prisma: Next-Generation ORM for Node.js and TypeScript," [Online]. Available: https://www.prisma.io/. Accessed: Dec. 2024.
+
+\bibitem{zeromq}
+iMatix Corporation, "ZeroMQ: Distributed Messaging," [Online]. Available: https://zeromq.org/. Accessed: Dec. 2024.
+
+\bibitem{mqtt}
+OASIS, "MQTT: The Standard for IoT Messaging," [Online]. Available: https://mqtt.org/. Accessed: Dec. 2024.
+
+\bibitem{grpc}
+Google LLC, "gRPC: A High-Performance, Open Source Universal RPC Framework," [Online]. Available: https://grpc.io/. Accessed: Dec. 2024.
+
+\bibitem{protobuf}
+Google LLC, "Protocol Buffers: Google's Data Interchange Format," [Online]. Available: https://protobuf.dev/. Accessed: Dec. 2024.
+
+\bibitem{socketio}
+Socket.IO, "Socket.IO: Bidirectional and Low-Latency Communication," [Online]. Available: https://socket.io/. Accessed: Dec. 2024.
+
+\bibitem{websocket}
+IETF, "The WebSocket Protocol," RFC 6455, Dec. 2011. [Online]. Available: https://www.rfc-editor.org/rfc/rfc6455
+
+\bibitem{aws}
+Amazon Web Services, Inc., "Amazon Web Services (AWS): Cloud Computing Services," [Online]. Available: https://aws.amazon.com/. Accessed: Dec. 2024.
+
+\bibitem{docker}
+Docker, Inc., "Docker: Accelerated Container Application Development," [Online]. Available: https://www.docker.com/. Accessed: Dec. 2024.
+
+\bibitem{python}
+Python Software Foundation, "Python Programming Language," [Online]. Available: https://www.python.org/. Accessed: Dec. 2024.
+
+\bibitem{ros}
+S. Macenski, T. Foote, B. Gerkey, C. Lalancette, and W. Woodall, "Robot Operating System 2: Design, Architecture, and Uses In The Wild," \textit{Science Robotics}, vol. 7, no. 66, 2022.
+
+\bibitem{gru}
+K. Cho, B. van Merrienboer, D. Bahdanau, and Y. Bengio, "On the Properties of Neural Machine Translation: Encoder-Decoder Approaches," in \textit{Proceedings of SSST-8, Eighth Workshop on Syntax, Semantics and Structure in Statistical Translation}, 2014.
+
+\bibitem{attention}
+A. Vaswani et al., "Attention is All You Need," in \textit{Advances in Neural Information Processing Systems (NeurIPS)}, vol. 30, 2017.
+
+\end{thebibliography}
+
+\end{document}
