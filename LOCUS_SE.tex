@@ -219,7 +219,7 @@ The system includes a dedicated web interface for advanced monitoring and system
 
 \begin{enumerate}
     \item [1)] WDR1. Multi-modal Context Visualization \\
-    The dashboard shall provide a unified view of real-time inference results from heterogeneous sensors. It must display bounding boxes for YOLO object detection, keypoints for Pose estimation, and classification labels for YAMNet audio analysis. Additionally, it visualizes the mapping of raw $(x, y)$ coordinates to specific semantic zones (e.g., "unknown" to "Kitchen").
+    The dashboard shall provide a unified view of real-time inference results from heterogeneous sensors. It must display bounding boxes for YOLO object detection, keypoints for Pose estimation, and classification labels for YAMNet audio analysis. Additionally, it visualizes the mapping of raw $(x, y)$ coordinates to specific semantic zones (e.g., ``unknown'' to ``Kitchen'').
 
     \item [2)] WDR2. AI Inference Pipeline \& Pollution Prediction \\
     The dashboard must present a unified real-time inference pipeline view to diagnose the stability of the On-device AI and visualize pollution predictions. It shall display sensor message counts (visual, pose, audio, location) and TimeSync Buffer status (e.g., 25/30 timesteps). The visualization shows the complete data flow from sensors through Context Encoder to GRU prediction. The final stage of this pipeline visualizes the pollution prediction results for each semantic zone (e.g., Balcony, Bedroom) with color-coded indicators: high-risk zones ($\geq$0.70) in red, medium-risk (0.40–0.69) in orange, and low-risk ($<$0.40) in green. This integrated visualization enables developers to monitor both the synchronization health and the prediction outcomes in a single cohesive view.
@@ -339,39 +339,30 @@ macOS is Apple's operating system providing a robust development environment cen
 \item[2] Programming Languages
 
 \begin{itemize}
-\item [1)] Python\cite{Python}
-\begin{figure}[h]
-\hspace{1.5cm}
+\item [1)] Python\cite{python}
+\begin{figure}[H]
 \centering
-\begin{minipage}{0.5\columnwidth}
-    \includegraphics[width=\linewidth]{logo/Python-Photoroom.png}
-    \caption{Python}
-\end{minipage}
-\end{figure} \\
+\includegraphics[width=0.35\columnwidth]{logo/Python-Photoroom.png}
+\caption{Python}
+\end{figure}
 
 Python is a high-level, interpreted programming language known for its simplicity, readability, and extensive library ecosystem. It provides rich support for scientific computing through libraries such as TensorFlow, PyTorch, NumPy, and Pandas, making it the de facto standard for machine learning and data processing tasks. The language's dynamic typing and automatic memory management enable rapid prototyping, while its mature frameworks like FastAPI and Flask facilitate backend server development. Python's cross-platform compatibility and strong community support ensure broad accessibility across different development environments.\\
 
 \item [2)] TypeScript\cite{Typescript}
-\begin{figure}[h]
-\hspace{1cm}
+\begin{figure}[H]
 \centering
-\begin{minipage}{0.5\columnwidth}
-    \includegraphics[width=\linewidth]{logo/TypeScript-Photoroom.png}
-    \caption{Typescript}
-\end{minipage}
-\end{figure} \\
+\includegraphics[width=0.35\columnwidth]{logo/TypeScript-Photoroom.png}
+\caption{Typescript}
+\end{figure}
 
 TypeScript is a strongly typed superset of JavaScript that compiles to plain JavaScript, adding optional static typing to the language. It provides compile-time type checking that catches errors early in the development process, significantly reducing runtime failures and improving code maintainability. The language supports modern ECMAScript features and offers excellent IDE integration with features like intelligent code completion, refactoring tools, and inline documentation. TypeScript's gradual typing system allows developers to incrementally adopt type safety in existing JavaScript codebases, making it ideal for large-scale web application development.\\
 
-\item [3)] JavaScript\cite{JavaScript}
-\begin{figure}[h]
-\hspace{1cm}
+\item [3)] JavaScript\cite{javascript}
+\begin{figure}[H]
 \centering
-\begin{minipage}{0.5\columnwidth}
-    \includegraphics[width=\linewidth]{logo/javascript-Photoroom.png}
-    \caption{JavaScript}
-\end{minipage}
-\end{figure}\\
+\includegraphics[width=0.35\columnwidth]{logo/javascript-Photoroom.png}
+\caption{JavaScript}
+\end{figure}
 JavaScript is a multi-paradigm scripting language used to build interactive user interfaces and application logic across web and cross-platform environments. It provides dynamic typing and event-driven programming capabilities, enabling responsive user experiences in both browser-based and mobile applications. The language's vast ecosystem includes package managers like npm and build tools like Webpack, facilitating modern frontend development workflows.\\
 \end{itemize}
 \end{enumerate}
@@ -380,142 +371,103 @@ JavaScript is a multi-paradigm scripting language used to build interactive user
 \begin{enumerate}
 \item[3] Cloud Infrastructure
 
-\item[1)] Amazon Web Services (AWS)\cite{Amazon Web Services (AWS)}
-\begin{figure}[h]
-\hspace{1cm}
+\item[1)] Amazon Web Services (AWS)\cite{aws}
+\begin{figure}[H]
 \centering
-\begin{minipage}{0.5\columnwidth}
-    \includegraphics[width=\linewidth]{logo/AWS-Photoroom.png}
-    \caption{Amazon Web Services (AWS)}
-\end{minipage}
-\end{figure}\\
+\includegraphics[width=0.35\columnwidth]{logo/AWS-Photoroom.png}
+\caption{Amazon Web Services (AWS)}
+\end{figure}
 Amazon Web Services (AWS) is a comprehensive cloud computing platform that provides scalable infrastructure and managed services for application deployment. It offers resizable compute capacity through EC2 instances, along with features like auto-scaling, load balancing, and flexible networking configurations. The platform supports various database solutions including PostgreSQL, and provides robust security features with a pay-as-you-go pricing model. In the LOCUS project, AWS hosts the LocationLocusData backend system, which includes an MQTT broker for IoT device communication and REST API endpoints for user authentication, home structure management, and cleaning log persistence.
 
-\item[2)] Naver Cloud Platform\cite{Naver Cloud Platform}
-\begin{figure}[h]
-
+\item[2)] Naver Cloud Platform\cite{navercloud}
+\begin{figure}[H]
 \centering
-\begin{minipage}{0.5\columnwidth}
-    \includegraphics[width=\linewidth]{logo/navercloud-Photoroom.png}
-    \caption{Naver Cloud Platform}
-    \label{fig:ncp}
-\end{minipage}
-\end{figure}\\
+\includegraphics[width=0.35\columnwidth]{logo/navercloud-Photoroom.png}
+\caption{Naver Cloud Platform}
+\label{fig:ncp}
+\end{figure}
 Naver Cloud Platform is a Korean cloud service provider offering enterprise-grade infrastructure and AI services optimized for domestic markets. It provides virtual computing resources similar to AWS EC2, with support for various instance types and managed database services. In the LOCUS project, Naver Cloud hosts the Federated Learning server powered by the Flower framework, which orchestrates distributed model training by aggregating Base Layer weights from multiple edge devices while ensuring that raw household data never leaves individual homes.
 \end{enumerate}
 
 \begin{enumerate}
 \item[4] Development Tools
 
-\item[1)] Visual Studio Code\cite{Visual Studio Code}
-\begin{figure}[h]
-\hspace{2cm}
+\item[1)] Visual Studio Code\cite{vscode}
+\begin{figure}[H]
 \centering
-\begin{minipage}{0.5\columnwidth}
-    \includegraphics[width=\linewidth]{logo/VSCode-Photoroom.png}
-    \caption{Visual Studio Code}
-\end{minipage}
-\end{figure}\\
+\includegraphics[width=0.35\columnwidth]{logo/VSCode-Photoroom.png}
+\caption{Visual Studio Code}
+\end{figure}
 Visual Studio Code (VS Code) is a lightweight but powerful source code editor developed by Microsoft. It is used as the primary Integrated Development Environment (IDE) for both Python and TypeScript development. With its vast ecosystem of extensions, including support for debugging, syntax highlighting, and version control integration, VS Code streamlines the coding workflow and facilitates efficient development across the multi-modal system components.\\
 
-\item[2)] Docker\cite{Docker}
-\begin{figure}[h]
-\hspace{2cm}
+\item[2)] Docker\cite{docker}
+\begin{figure}[H]
 \centering
-\begin{minipage}{0.5\columnwidth}
-    \includegraphics[width=\linewidth]{logo/docker-Photoroom.png}
-    \caption{Docker}
-\end{minipage}
-\end{figure}\\
+\includegraphics[width=0.35\columnwidth]{logo/docker-Photoroom.png}
+\caption{Docker}
+\end{figure}
 Docker is a containerization platform that packages applications and their dependencies into lightweight, portable containers, allowing them to run consistently across different environments. In LOCUS, Docker is used to run the PostgreSQL database in local development environments, providing a consistent and portable database setup across different developer machines.\\
 
-\item[3)] GitHub\cite{GitHub}
-\begin{figure}[h]
-\hspace{2cm}
+\item[3)] GitHub\cite{github}
+\begin{figure}[H]
 \centering
-\begin{minipage}{0.5\columnwidth}
-    \includegraphics[width=\linewidth]{logo/GitHub-Photoroom.png}
-    \caption{GitHub}
-\end{minipage}
-\end{figure}\\
+\includegraphics[width=0.35\columnwidth]{logo/GitHub-Photoroom.png}
+\caption{GitHub}
+\end{figure}
 GitHub is a cloud-based platform for version control and collaboration, powered by Git. It serves as the central repository for the LOCUS project, managing the source code for the backend, frontend, and AI modules. GitHub facilitates team collaboration through features like pull requests, issue tracking, and code reviews, ensuring systematic version management and continuous integration throughout the development lifecycle.\\
 
-\item[4)] Notion\cite{Notion}
-\begin{figure}[!ht]
-\hspace{2cm}
+\item[4)] Notion\cite{notion}
+\begin{figure}[H]
 \centering
-\begin{minipage}{0.4\columnwidth}
-    \includegraphics[width=\linewidth]{logo/Notion-Photoroom.png}
-    \caption{Notion}
-\end{minipage}
-\end{figure}\\
+\includegraphics[width=0.3\columnwidth]{logo/Notion-Photoroom.png}
+\caption{Notion}
+\end{figure}
 Notion is an all-in-one workspace tool used for project management, documentation, and team collaboration. In this project, Notion serves as the central hub for organizing research materials, tracking development progress via Kanban boards, and documenting API specifications. Its flexibility allows the team to maintain a shared knowledge base and synchronize tasks effectively across different development phases.\\
 
-\item[5)] Figma\cite{Figma}
-\begin{figure}[h]
-\hspace{1cm}
+\item[5)] Figma\cite{figma}
+\begin{figure}[H]
 \centering
-\begin{minipage}{0.4\columnwidth}
-    \includegraphics[width=\linewidth]{logo/figma-Photoroom.png}
-    \caption{Figma}
-\end{minipage}
-\end{figure}\\
+\includegraphics[width=0.3\columnwidth]{logo/figma-Photoroom.png}
+\caption{Figma}
+\end{figure}
 Figma is a collaborative web-based interface design tool for creating user interfaces and prototypes. It offers powerful design features including component-based systems, auto-layout, and interactive prototyping capabilities. The platform allows real-time collaboration among designers and developers, streamlining the design-to-development workflow with efficient handoff tools and design system management. With its cloud-based nature and extensive plugin ecosystem, Figma enhances team productivity and ensures consistent design implementation across projects.\\
 
-\item[6] Cost Estimation
+\item[6)] Cost Estimation
 
 The LOCUS project leverages primarily open-source technologies and cloud infrastructure with a pay-as-you-go pricing model. The following table summarizes the estimated costs for development and deployment:
 
 \begin{table}[H]
 \centering
 \caption{Development and Deployment Cost Estimation}
+\footnotesize
 \begin{tabular}{|l|l|r|}
 \hline
-\textbf{Category} & \textbf{Item} & \textbf{Monthly Cost (USD)} \\
+\textbf{Category} & \textbf{Item} & \textbf{Cost (USD)} \\
 \hline
-\multirow{4}{*}{Cloud Infrastructure} & AWS EC2 (t3.medium) & \$30.37 \\
-& AWS S3 Storage (50GB) & \$1.15 \\
-& AWS RDS PostgreSQL (db.t3.micro) & \$15.33 \\
-& Naver Cloud Platform (Server) & \$25.00 \\
+Cloud Infrastructure & AWS EC2 & \$30.37 \\
+& AWS S3 Storage & \$1.15 \\
+& Naver Cloud Platform & \$25.00 \\
 \hline
-\multirow{6}{*}{Development Tools} & GitHub (Free Tier) & \$0.00 \\
-& Visual Studio Code (Free) & \$0.00 \\
-& Docker (Free) & \$0.00 \\
-& Notion (Free Tier) & \$0.00 \\
-& Figma (Free Tier) & \$0.00 \\
-& Python/Node.js/TypeScript (Free) & \$0.00 \\
+Development Tools & GitHub, VS Code, Docker & \$0.00 \\
+& Notion, Figma & \$0.00 \\
 \hline
-\multirow{5}{*}{Hardware} & MacBook Pro (M2) - amortized & \$83.33 \\
-& iPhone 13 Pro (LiDAR) - amortized & \$27.78 \\
-& Windows PC - amortized & \$41.67 \\
-& Robot Vacuum Cleaner (test device) & \$138.89 \\
-& Development Workstation & \$0.00 \\
+Hardware & MacBook Pro & \$83.33 \\
+& Robot Vacuum & \$138.89 \\
 \hline
-\multirow{2}{*}{AI/ML Frameworks} & TensorFlow/Keras (Open Source) & \$0.00 \\
-& Flower Federated Learning (Open Source) & \$0.00 \\
+AI/ML Frameworks & TensorFlow, Keras, Flower & \$0.00 \\
 \hline
-\textbf{Total Monthly Cost} & & \textbf{\$363.52} \\
-\textbf{Total Annual Cost} & & \textbf{\$4,362.24} \\
+\multicolumn{2}{|l|}{\textbf{Total Monthly Cost}} & \textbf{\$278.74} \\
 \hline
 \end{tabular}
 \end{table}
 
 \textbf{Cost Breakdown Notes:}
 \begin{itemize}
-    \item \textbf{Cloud Infrastructure}: All cloud services use pay-as-you-go pricing. AWS EC2 hosts the Fastify backend server and MQTT broker. S3 stores 3D home models (.glb files). RDS PostgreSQL manages user data, home structures, and cleaning logs. Naver Cloud Platform hosts the Federated Learning server powered by Flower framework.
-
-    \item \textbf{Development Tools}: All software development tools are either open-source or available under free tiers for educational/small-team use. GitHub provides unlimited public repositories. Visual Studio Code, Docker, Python, Node.js, and TypeScript are entirely free and open-source.
-
-    \item \textbf{Hardware}: Hardware costs are amortized over 36 months assuming typical device lifespans. The MacBook Pro is essential for iOS development with RoomPlan/ARKit. The iPhone 13 Pro provides LiDAR sensors for 3D scanning. The robot vacuum cleaner serves as the edge AI inference platform. Windows PC is used for cross-platform testing.
-
-    \item \textbf{AI/ML Frameworks}: TensorFlow, Keras, and Flower are open-source frameworks with no licensing costs. YOLOv11 and YAMNet models are freely available for research and educational purposes.
+    \item \textbf{Cloud Infrastructure}: AWS hosts the backend server and storage. Naver Cloud hosts the Federated Learning server.
+    \item \textbf{Development Tools}: All tools are open-source or available under free tiers.
+    \item \textbf{Hardware}: MacBook Pro for iOS development, robot vacuum as edge AI platform.
+    \item \textbf{AI/ML Frameworks}: TensorFlow, Keras, and Flower are open-source with no licensing costs.
 \end{itemize}
-
-\textbf{Scalability Considerations:}
-As the system scales to support more users and devices, cloud infrastructure costs will increase proportionally. However, the pay-as-you-go model ensures costs remain predictable and aligned with actual usage. For production deployment, we estimate costs would scale to approximately \$500-1,000/month to support 100-500 concurrent users with 10-50 active robot devices.
-
-\textbf{Open-Source Advantage:}
-By leveraging open-source technologies (React, Node.js, Python, TensorFlow, PostgreSQL, Docker), the project avoids significant licensing fees associated with proprietary software. This approach reduces the total cost of ownership while maintaining flexibility and community support.
 
 \end{enumerate}
 
@@ -526,122 +478,91 @@ By leveraging open-source technologies (React, Node.js, Python, TensorFlow, Post
 
 \begin{itemize}
 \item [1)] Fastify\cite{Fastify}
-\begin{figure}[h]
-\hspace{2cm}
+\begin{figure}[H]
 \centering
-\begin{minipage}{0.5\columnwidth}
-    \includegraphics[width=\linewidth]{logo/fastify-Photoroom.png}
-    \caption{Fastify}
-\end{minipage}
-\end{figure}\\
+\includegraphics[width=0.35\columnwidth]{logo/fastify-Photoroom.png}
+\caption{Fastify}
+\end{figure}
 Fastify is a high-performance web framework for Node.js. In the LOCUS architecture, it serves as the primary backend server, handling API requests from the dashboard and mobile clients. Its low overhead and asynchronous nature make it ideal for processing real-time data streams and managing interactions with the database.\\
 
 \item [2)] React Native\cite{React Native}
-\begin{figure}[h]
-\hspace{2cm}
+\begin{figure}[H]
 \centering
-\begin{minipage}{0.5\columnwidth}
-    \includegraphics[width=\linewidth]{logo/reactnative-Photoroom.png}
-    \caption{React Native}
-\end{minipage}
-\end{figure}\\
+\includegraphics[width=0.35\columnwidth]{logo/reactnative-Photoroom.png}
+\caption{React Native}
+\end{figure}
 React Native is a cross-platform mobile application framework developed by Facebook that enables developers to build native mobile apps using JavaScript and React. It provides a bridge between JavaScript code and native platform components, allowing for code reuse across iOS and Android while maintaining native performance and user experience. The framework supports hot reloading for rapid development and offers access to native APIs and device features. In the LOCUS project, React Native is used to develop the mobile tracker application that runs on users' smartphones, collecting GPS and IMU data to assist in robot localization.\\
 
-\item [3)] React + Vite\cite{React + Vite}\\
-\begin{figure}[!ht]
-\hspace{2cm}
+\item [3)] React + Vite\cite{React + Vite}
+\begin{figure}[H]
 \centering
-\begin{minipage}{0.4\columnwidth}
-    \includegraphics[width=\linewidth]{logo/Vite-Photoroom.png}
-    \caption{React + Vite}
-\end{minipage}
-\end{figure}\\ 
+\includegraphics[width=0.3\columnwidth]{logo/Vite-Photoroom.png}
+\caption{React + Vite}
+\end{figure} 
 React is a JavaScript library for building user interfaces, while Vite is a modern frontend build tool that provides a fast development experience. This combination is used to build the LOCUS dashboard. React's component-based architecture allows for the creation of interactive UI elements for monitoring robot status, while Vite's Hot Module Replacement (HMR) feature ensures rapid feedback loops during development, significantly improving productivity.\\
 
-\item [4)] Flower\cite{Flower}
-\begin{figure}[!ht]
-\hspace{2cm}
+\item [4)] Flower\cite{flower}
+\begin{figure}[H]
 \centering
-\begin{minipage}{0.4\columnwidth}
-    \includegraphics[width=\linewidth]{logo/flower-Photoroom.png}
-    \caption{Flower}
-\end{minipage}
-\end{figure}\\
+\includegraphics[width=0.3\columnwidth]{logo/flower-Photoroom.png}
+\caption{Flower}
+\end{figure}
 Flower is an open-source federated learning framework designed to enable privacy-preserving distributed machine learning across heterogeneous devices and data silos. It provides a flexible architecture that supports various federated learning strategies including FedAvg, FedProx, and FedPer (Federated Personalization), allowing researchers to customize aggregation algorithms and client selection policies. The framework abstracts away the complexity of network communication and model serialization, enabling seamless coordination between edge devices and central servers via gRPC. In the LOCUS project, Flower orchestrates the federated training process by aggregating Base Layer GRU weights from multiple household edge devices while ensuring that raw sensor data and personalized Head Layers never leave individual homes, thereby preserving user privacy.\\
 \end{itemize}
 
 \item[2] Environment Mapping APIs
-\item [1)] RoomPlan API\cite{RoomPlan API}\\
-\begin{figure}[!ht]
-\hspace{2cm}
+\item [1)] RoomPlan API\cite{apple_roomplan}
+\begin{figure}[H]
 \centering
-\begin{minipage}{0.5\columnwidth}
-    \includegraphics[width=\linewidth]{logo/roomplan-Photoroom.png}
-    \caption{RoomPlan API}
-\end{minipage}
-\end{figure}\\ 
+\includegraphics[width=0.35\columnwidth]{logo/roomplan-Photoroom.png}
+\caption{RoomPlan API}
+\end{figure} 
 RoomPlan is a powerful Swift API powered by Apple, designed to create 3D floor plans of indoor spaces using the camera and LiDAR scanner on iOS devices. In the LOCUS project, RoomPlan serves as the core component for Home Structure Intelligence. It actively scans the user's physical environment in real-time, automatically recognizing and classifying structural elements such as walls, windows, doors, and furniture. This technology enables the system to generate a parametric 3D model (USDZ format) of the home, which acts as the semantic map for defining cleaning zones and context.\\
 
-\item [2)] ARKit\cite{ARKit}\\
-\begin{figure}[!ht]
-\hspace{2cm}
+\item [2)] ARKit\cite{apple_arkit}
+\begin{figure}[H]
 \centering
-\begin{minipage}{0.5\columnwidth}
-    \includegraphics[width=\linewidth]{logo/ARKit-Photoroom.png}
-    \caption{ARKit}
-\end{minipage}
-\end{figure}\\ 
+\includegraphics[width=0.35\columnwidth]{logo/ARKit-Photoroom.png}
+\caption{ARKit}
+\end{figure} 
 ARKit is Apple’s advanced augmented reality framework that integrates device motion tracking, camera scene capture, and advanced scene processing. It functions as the foundational layer that powers RoomPlan. In this system, ARKit utilizes Visual Inertial Odometry (VIO) to fuse sensor data from the device’s accelerometer and gyroscope with visual data. This provides precise, real-time localization, allowing the LOCUS system to accurately track the position and orientation of the edge device within the generated 3D map, bridging the gap between the physical home and the digital context model.\\
 
 \item[3] Communication Middleware
-\item [1)] ZeroMQ\cite{ZeroMQ}\\
-\begin{figure}[h]
-\hspace{2cm}
+\item [1)] ZeroMQ\cite{zeromq}
+\begin{figure}[H]
 \centering
-\begin{minipage}{0.5\columnwidth}
-    \includegraphics[width=\linewidth]{logo/zeroMQ-Photoroom.png}
-    \caption{ZeroMQ}
-\end{minipage}
-\end{figure}\\ 
+\includegraphics[width=0.35\columnwidth]{logo/zeroMQ-Photoroom.png}
+\caption{ZeroMQ}
+\end{figure} 
 ZeroMQ is a high-performance asynchronous messaging library that provides socket-like abstractions for various messaging patterns including publish-subscribe, request-reply, and push-pull. It operates at the transport layer, enabling ultra-low-latency inter-process communication without requiring a dedicated message broker. In the LOCUS system, ZeroMQ facilitates real-time data exchange between sensor modules (camera, microphone) and the AI inference engine, ensuring minimal latency for multi-modal data synchronization.\\
 
-\item [2)] MQTT\cite{MQTT}\\
-\begin{figure}[h]
-\hspace{2cm}
+\item [2)] MQTT\cite{mqtt}
+\begin{figure}[H]
 \centering
-\begin{minipage}{0.5\columnwidth}
-    \includegraphics[width=\linewidth]{logo/mqtt-Photoroom.png}
-    \caption{MQTT}
-\end{minipage}
-\end{figure}\\ 
+\includegraphics[width=0.35\columnwidth]{logo/mqtt-Photoroom.png}
+\caption{MQTT}
+\end{figure} 
 MQTT (Message Queuing Telemetry Transport) is a lightweight publish-subscribe messaging protocol designed for low-bandwidth, unreliable networks, and is widely used for IoT device communication. In LOCUS, MQTT serves as the messaging backbone between edge devices and cloud services, enabling efficient real-time delivery of pollution predictions, cleaning status updates, and system telemetry to the backend server and web dashboard.\\
 
-\item [3)] gRPC\cite{gRPC}\\
-\begin{figure}[h]
-\hspace{2cm}
+\item [3)] gRPC\cite{grpc}
+\begin{figure}[H]
 \centering
-\begin{minipage}{0.5\columnwidth}
-    \includegraphics[width=\linewidth]{logo/grpc-Photoroom.png}
-    \caption{gRPC}
-\end{minipage}
-\end{figure}\\
+\includegraphics[width=0.35\columnwidth]{logo/grpc-Photoroom.png}
+\caption{gRPC}
+\end{figure}
 gRPC is a high-performance, open-source Remote Procedure Call (RPC) framework developed by Google that enables efficient communication between distributed systems. It uses Protocol Buffers (protobuf) for compact binary serialization, significantly reducing message size compared to text-based formats like JSON. Built on HTTP/2, gRPC supports bidirectional streaming, multiplexing, and flow control, making it ideal for low-latency, high-throughput scenarios. In the LOCUS federated learning architecture, gRPC serves as the communication protocol between edge devices and the Flower server hosted on Naver Cloud Platform, facilitating the secure transmission of Base Layer model weights during federated training rounds while maintaining strict privacy guarantees.\\
 
 \item[4] Database
-\item [1)] PostgreSQL\cite{PostgreSQL}\\
-\begin{figure}[h]
-\hspace{2cm}
+\item [1)] PostgreSQL\cite{postgresql}
+\begin{figure}[H]
 \centering
-\begin{minipage}{0.5\columnwidth}
-    \includegraphics[width=\linewidth]{logo/PostgreSQL.png}
-    \caption{PostgreSQL}
-\end{minipage}
-\end{figure}\\ 
+\includegraphics[width=0.35\columnwidth]{logo/PostgreSQL.png}
+\caption{PostgreSQL}
+\end{figure} 
 PostgreSQL is a powerful, open-source object-relational database system. It is employed as the central persistent storage for the LOCUS system, storing user profiles, semantic map data, and historical cleaning logs. Its robustness ensures data integrity for the entire platform.\\
 
 \end{enumerate}
 
-\clearpage
 \begin{enumerate}
 
 \item[5] Task Distribution
@@ -654,24 +575,22 @@ PostgreSQL is a powerful, open-source object-relational database system. It is e
     \hline
     Tasks & Name & Descriptions \\
     \hline
-    Project Manager & Lee \par Da Yeon & The Project Manager serves as the operational orchestrator responsible for planning, executing, and ensuring deliverables meet quality standards throughout the project lifecycle. This role manages the development sprints using Agile methodologies and facilitates communication between the AI research team and software engineers to ensure the timely integration of multi-modal features like Federated Learning and AR mapping. \\ \hline
-    
-    UI-UX Designer &  Lee \par Da Yeon, \par Lee \par Seung \par Hwan  & The UI-UX designers utilize Figma to design the interfaces for both the mobile application and the web-based dashboard. They are responsible for determining how screens are presented to maximize user engagement and encourage retention. Once the UI/UX decisions for the app and dashboard are finalized, they are communicated to the frontend developers for implementation. \\ 
-    \hline
-    
-    Frontend Developer & Lee \par Seung \par Hwan  & The Frontend Developer creates the client-side mobile application logic and structure using React Native and TypeScript. This position is responsible for implementing the mobile tracking interface that users interact with directly. Key tasks include optimizing rendering performance for real-time sensor data visualization and ensuring seamless communication with the backend via REST APIs and MQTT protocols. \\ 
+    Project Manager & Lee \par Da Yeon & Oversees project schedule and milestones using Agile methodologies. Facilitates communication between the AI research team and software engineers to ensure timely integration of multi-modal features. \\ \hline
+
+    UI-UX Designer &  Lee \par Da Yeon, \par Lee \par Seung \par Hwan  & Designs interfaces for the mobile application and web dashboard using Figma. Responsible for determining screen layouts to maximize user engagement and communicating designs to frontend developers. \\
     \hline
 
-    Backend Developer &  Kim \par Jun Hyung, \par Lee \par Seung \par Hwan & The Backend Developer designs and maintains the server-side architecture and database systems using Fastify and PostgreSQL. This role builds robust API endpoints for data exchange and manages the system's core infrastructure. Responsibilities include handling asynchronous messaging via ZeroMQ to synchronize edge devices with the server and ensuring data integrity for user logs and cleaning schedules.\\ 
+    Frontend Developer & Lee \par Seung \par Hwan  & Creates client-side mobile application using React Native and TypeScript. Implements real-time sensor data visualization and ensures seamless communication with backend via REST APIs and MQTT. \\
     \hline
 
-    Spatial Computing Engineer & Go \par Han Yeong, \par Lee \par Seung \par Hwan  & The Spatial Computing Engineer specializes in processing 3D spatial data and bridging the physical environment with the digital twin. Leveraging ARKit and the RoomPlan API, this engineer implements Visual Inertial Odometry (VIO) for precise indoor localization. The role involves converting LiDAR scan data into semantic 3D maps (USDZ) and handling complex coordinate transformations to align robot positioning with the user's home structure. \\
-    \hline
-    
-    Multi-modal AI Engineer &  Kim \par Jun Hyung, \par Lee \par Seung \par Hwan, \par Go \par Han Yeong & The Multi-modal AI Engineer architects the core intelligence pipeline by synthesizing heterogeneous sensor data. This role implements \textbf{YOLO} and \textbf{YOLO-Pose} for visual context analysis, and \textbf{YAMNet} for acoustic event classification. A critical responsibility is designing the \textbf{TimeSyncBuffer}, which temporally aligns these asynchronous data streams to feed a \textbf{GRU}-based network for precise user behavior prediction. Furthermore, the engineer develops and maintains a \textbf{Federated Learning} framework that continuously personalizes models on edge devices while coordinating secure periodic updates with the central server. \\
+    Backend Developer &  Kim \par Jun Hyung, \par Lee \par Seung \par Hwan & Designs server-side architecture using Fastify and PostgreSQL. Builds API endpoints and handles asynchronous messaging via ZeroMQ to synchronize edge devices with the server. \\
     \hline
 
+    Spatial Computing Engineer & Go \par Han Yeong, \par Lee \par Seung \par Hwan  & Processes 3D spatial data using ARKit and RoomPlan API. Implements Visual Inertial Odometry (VIO) for indoor localization and handles coordinate transformations for robot positioning. \\
+    \hline
 
+    Multi-modal AI Engineer &  Kim \par Jun Hyung, \par Lee \par Seung \par Hwan, \par Go \par Han Yeong & Implements YOLO, YOLO-Pose, and YAMNet for multi-modal context analysis. Designs TimeSyncBuffer for temporal alignment and GRU-based prediction model. Develops Federated Learning framework for on-device personalization. \\
+    \hline
 
     \end{tabular}
 
@@ -686,15 +605,14 @@ This section defines the functional specifications of the LOCUS system, organize
 
 \begin{enumerate}
     \item[1.] Splash Screen
-\begin{figure}[h]
-\centering
-\begin{minipage}{0.45\linewidth}
-    \includegraphics[width=\linewidth]{app/splash.png}
-    \caption{Entry Page}
-\end{minipage}
-\end{figure}
 
 Upon application launch, a branded startup page is displayed for a duration of 1 to 2 seconds. This screen serves to mask the asynchronous loading of essential data and initialization processes, preventing the display of an empty screen and ensuring a seamless user experience (UX) from the start.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\linewidth]{app/splash.png}
+\caption{Entry Page}
+\end{figure}
 
 \textbf{Technical Requirements:}
 \begin{itemize}
@@ -703,21 +621,16 @@ Upon application launch, a branded startup page is displayed for a duration of 1
     \item Automatic transition to authentication screen
 \end{itemize}
 
-\end{enumerate}
-
-\begin{enumerate}
     \item[2.] User Registration (Sign Up)
 
-\begin{figure}[H]
-  \centering
-  \begin{minipage}{0.45\linewidth}
-  \includegraphics[width=\linewidth]{app/signup.png}
-  \caption{Sign-Up Page}
-  \label{fig:signup}
-  \end{minipage}
-\end{figure}
+The Sign Up page facilitates new user registration by collecting essential credentials including name, email, and password. The interface incorporates real-time input validation with visual feedback on password complexity.
 
-The Sign Up page facilitates new user registration by collecting essential credentials including name, email, and password. To enhance usability and security, the interface incorporates real-time input validation. Visual indicators dynamically change color as the user types, providing immediate feedback on whether the password meets the required complexity standards (length and character variety).
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\linewidth]{app/signup.png}
+\caption{Sign-Up Page}
+\label{fig:signup}
+\end{figure}
 
 The system implements email verification through the carrier's authentication system to ensure validity and prevent fraudulent registrations. Users must enter a valid email address that will be verified before account creation can proceed.
 
@@ -739,19 +652,12 @@ Furthermore, the interface enforces mandatory consent to the Terms of Service be
     \item Account credentials stored in PostgreSQL via Prisma ORM
 \end{itemize}
 
-\end{enumerate}
-
-
-\begin{enumerate}
     \item[3.] User Authentication (Log In)
 
-\begin{figure}[h]
-\hspace{1.5cm}
+\begin{figure}[H]
 \centering
-\begin{minipage}{0.4\columnwidth}
-    \includegraphics[height=7cm, width=\linewidth]{app/login.png}
-    \caption{Login Page}
-\end{minipage}
+\includegraphics[width=0.4\columnwidth]{app/login.png}
+\caption{Login Page}
 \end{figure}
 
 The login interface serves as the secure gateway to the application. It provides input fields for email and password authentication, along with a "Forgot Password" option for account recovery. To enhance accessibility, the screen integrates a Gmail OAuth login button, allowing users to sign in instantly using their Google account without manual credential entry. Users can access the sign-up page or initiate password recovery through carrier-based verification if they forget their credentials.
@@ -774,30 +680,23 @@ The login interface serves as the secure gateway to the application. It provides
 
 \end{enumerate}
 
-\end{enumerate}
-
 \subsection{3D Home Structure Management Features}
 
 \begin{enumerate}
     \item[1.] Home Management Interface
 
-    \begin{figure}[h]
-    \centering
-    % 왼쪽: 홈 목록 (List)
-    \begin{minipage}{0.48\columnwidth}
-        \centering
-        \includegraphics[width=0.9\linewidth]{app/home3.png}
-        \caption{Home List UI}
-        \label{fig:home_list}
-    \end{minipage}
-    \hfill
-    % 오른쪽: 홈 등록 (Add)
-    \begin{minipage}{0.48\columnwidth}
-        \centering
-        \includegraphics[width=0.8\linewidth]{app/home2.png}
-        \caption{Add New Home}
-        \label{fig:home_add}
-    \end{minipage}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.45\columnwidth]{app/home3.png}
+\caption{Home List UI}
+\label{fig:home_list}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.4\columnwidth]{app/home2.png}
+\caption{Add New Home}
+\label{fig:home_add}
 \end{figure}
 
 The Home interface serves as the central hub for managing multiple spatial environments (e.g., Main House, Parents' House). It employs a card-based UI to display registered homes with real-time metadata, including the number of connected IoT devices and the robot's connectivity status. The system provides real-time status indicators using a color-coded scheme: Green for Active status (robot is connected and operational) and Yellow for Away status (robot is disconnected or unavailable), enabling at-a-glance system monitoring.
@@ -836,19 +735,16 @@ Furthermore, the interface supports the registration of new environments. Users 
 
 \begin{figure}[h]
 \centering
-\begin{minipage}{0.48\columnwidth}
-    \centering
-    \includegraphics[width=\linewidth]{app/semantic_zones.png}
-    \caption*{(a) Zone Detail View}
-\end{minipage}
-\hfill
-\begin{minipage}{0.48\columnwidth}
-    \centering
-    \includegraphics[width=\linewidth]{app/label_management.png}
-    \caption*{(b) Label Management List}
-\end{minipage}
-\caption{Semantic Zone Labeling Interface}
-\label{fig:semantic_zones}
+\includegraphics[width=0.5\columnwidth]{app/semantic_zones.png}
+\caption{Zone Detail View}
+\label{fig:semantic_zones_detail}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.5\columnwidth]{app/label_management.png}
+\caption{Label Management List}
+\label{fig:label_management}
 \end{figure}
 
 The Semantic Labeling interface enables users to define and customize spatial zones within their home structure, mapping physical 3D coordinates to logical semantic contexts (e.g., Kitchen, Living Room, Bedroom). This interface provides comprehensive label management capabilities including creation, modification, and deletion of zone definitions.
@@ -925,7 +821,7 @@ The edge AI system performs real-time inference on heterogeneous sensor modaliti
     \begin{itemize}
         \item Input: Robot $(x, y, z)$ coordinates from MQTT topic \texttt{home/\{homeId\}/robot/location}
         \item Processing: Point-in-polygon algorithm maps coordinates to semantic zone
-        \item Output: 7-dimensional one-hot encoded vector (zone categories)
+        \item Output: One-hot encoded vector (dimension varies based on user-defined zones)
     \end{itemize}
     \item \textbf{Temporal Context}:
     \begin{itemize}
@@ -956,8 +852,9 @@ The TimeSync module collects asynchronous sensor streams and fuses them into uni
     \item Context vector fusion:
     \begin{itemize}
         \item Input: Visual (14-dim) + Pose (51-dim) + Audio (17-dim) + Spatial (7-dim) + Temporal (10-dim)
+        \item Concatenated raw features: 99-dimensional vector
         \item Fusion method: Attention-based context encoder
-        \item Output: 160-dimensional context vector (float32)
+        \item Attention encoder output: 160-dimensional context vector (float32)
         \item Processing latency: ≤10ms per timestep
     \end{itemize}
     \item Sequence buffer:
@@ -1041,7 +938,7 @@ The federated learning system enables collaborative model improvement across mul
     \begin{itemize}
         \item Clients per round: 3 (configurable via \texttt{CLIENTS\_PER\_ROUND})
         \item Round duration: ≤10 minutes
-        \item Global model distribution: AWS S3
+        \item Global model distribution: Naver Cloud Platform
         \item Checkpoint directory: \texttt{data/fl\_checkpoints/}
     \end{itemize}
 \end{itemize}
@@ -1168,27 +1065,21 @@ This section describes the primary use cases of the LOCUS system from the user's
 \begin{enumerate}
     \item \textbf{Sign Up}
 
-    \begin{figure}[h]
-    \hspace{1.5cm}
-    \centering
-    \begin{minipage}{0.4\columnwidth}
-        \includegraphics[height=7cm, width=\linewidth]{app/signup.png}
-        \caption{User Registration}
-    \end{minipage}
-    \end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.4\columnwidth]{app/signup.png}
+\caption{User Registration}
+\end{figure}
 
     The user creates a new account by providing name, email, and password. The system validates that the email is unique and not already registered. Password requirements are displayed to guide the user in creating a secure password. The user must accept the Terms of Service before proceeding. Upon successful registration, the system confirms account creation and the user can proceed to log in.
 
     \item \textbf{Log In}
 
-    \begin{figure}[h]
-    \hspace{1.5cm}
-    \centering
-    \begin{minipage}{0.4\columnwidth}
-        \includegraphics[height=7cm, width=\linewidth]{app/login.png}
-        \caption{User Login}
-    \end{minipage}
-    \end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.4\columnwidth]{app/login.png}
+\caption{User Login}
+\end{figure}
 
     The user enters their email and password to log in. Alternatively, the user can choose to sign in using their Google account for faster authentication. The system verifies the credentials and grants access. If credentials are invalid, the system displays an error message. The user can also choose to reset their password if forgotten.
 \end{enumerate}
@@ -1206,14 +1097,11 @@ This section describes the primary use cases of the LOCUS system from the user's
 \begin{enumerate}
     \item \textbf{Create New Home}
 
-    \begin{figure}[h]
-    \hspace{1.5cm}
-    \centering
-    \begin{minipage}{0.4\columnwidth}
-        \includegraphics[height=7cm, width=\linewidth]{app/home1.png}
-        \caption{Home List View}
-    \end{minipage}
-    \end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.4\columnwidth]{app/home1.png}
+\caption{Home List View}
+\end{figure}
 
     The user navigates to the home management screen and selects ``Create New Home''. The system displays a form requesting home information including name and address. The user fills in the information and submits. The system confirms the home has been created successfully.
 
@@ -1239,40 +1127,31 @@ This section describes the primary use cases of the LOCUS system from the user's
 \begin{enumerate}
     \item \textbf{View Zone List}
 
-    \begin{figure}[h]
-    \hspace{1.5cm}
-    \centering
-    \begin{minipage}{0.4\columnwidth}
-        \includegraphics[height=7cm, width=\linewidth]{app/labellist.png}
-        \caption{Semantic Zone List}
-    \end{minipage}
-    \end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.4\columnwidth]{app/labellist.png}
+\caption{Semantic Zone List}
+\end{figure}
 
     The user accesses the label management interface. The system displays the 3D home model with existing semantic zones shown as colored areas. Each zone displays its name (e.g., ``Living Room'', ``Kitchen'', ``Bedroom'') and associated information. The user can view all defined zones in a list format.
 
     \item \textbf{Create New Zone}
 
-    \begin{figure}[h]
-    \hspace{1.5cm}
-    \centering
-    \begin{minipage}{0.4\columnwidth}
-        \includegraphics[height=7cm, width=\linewidth]{app/labelgen.png}
-        \caption{Zone Creation Interface}
-    \end{minipage}
-    \end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.4\columnwidth]{app/labelgen.png}
+\caption{Zone Creation Interface}
+\end{figure}
 
     The user clicks ``Add Zone'' to create a new zone. The system prompts the user to define the zone boundary by selecting points on the 3D floorplan. The user taps or clicks to place boundary points, forming a polygon around the desired area. The user then selects a zone type from available categories (e.g., ``Living Room'', ``Kitchen'', ``Bedroom''). The system saves the zone and displays it on the floorplan with a distinctive color.
 
     \item \textbf{Edit Existing Zone}
 
-    \begin{figure}[h]
-    \hspace{1.5cm}
-    \centering
-    \begin{minipage}{0.4\columnwidth}
-        \includegraphics[height=7cm, width=\linewidth]{app/labeledit.png}
-        \caption{Zone Editing Interface}
-    \end{minipage}
-    \end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.4\columnwidth]{app/labeledit.png}
+\caption{Zone Editing Interface}
+\end{figure}
 
     The user selects an existing zone from the list or by tapping it on the floorplan. The system displays the zone's current boundaries and label. The user can modify the boundary by dragging the corner points or change the zone name. The user saves the changes. The system updates the zone and the changes are immediately visible on the floorplan.
 \end{enumerate}
@@ -1302,14 +1181,11 @@ This section describes the primary use cases of the LOCUS system from the user's
 
     \item \textbf{Dashboard Visualization}
 
-    \begin{figure}[h]
-    \hspace{1.5cm}
-    \centering
-    \begin{minipage}{0.4\columnwidth}
-        \includegraphics[height=7cm, width=\linewidth]{app/home2.png}
-        \caption{Real-time Pollution Dashboard}
-    \end{minipage}
-    \end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.4\columnwidth]{app/pollution_map.png}
+\caption{Real-time Pollution Dashboard}
+\end{figure}
 
     The user opens the mobile app or web dashboard to view pollution predictions. The system displays the home's floorplan with each zone color-coded based on pollution levels: red for high pollution (urgent cleaning needed), orange for medium pollution (cleaning recommended), and green for low pollution (clean). The user can see the robot's current location on the map and view pollution scores for each zone. The display updates in real-time as the robot moves and gathers new information.
 
@@ -1341,7 +1217,7 @@ As illustrated in Figure~\ref{fig:architecture}, the system comprises four prima
 
     \item \textbf{AWS Cloud Backend (APP Backend AWS EC2)}: Hosted on an Ubuntu EC2 instance, this component runs a Node.js Fastify server that orchestrates all cloud-side operations. The backend maintains a PostgreSQL database for persistent storage of user accounts, home metadata, semantic labels, and cleaning logs. It serves 3D home models (.glb files) from an S3 bucket, which are captured via the mobile tracker application using Apple RoomPlan. The integrated MQTT broker facilitates bidirectional communication with edge devices, publishing configuration updates and cleaning commands while subscribing to pollution predictions and telemetry streams. The backend exposes RESTful API endpoints for user authentication (JWT-based), home management, label CRUD operations, and historical data queries.
 
-    \item \textbf{Robot Vacuum Cleaner (Edge AI Module)}: The on-device AI inference pipeline executes entirely on the robot's embedded processor, ensuring zero transmission of raw sensor data to the cloud. The architecture consists of three sub-components: (a) \textbf{Multi-Modal Sensors}: YOLO and YOLO-Pose models process camera frames to detect objects and human poses, YAMNet analyzes microphone audio (WAV format) to classify environmental sounds, and a location sensor provides real-time $(x, y, z)$ coordinates within the home; (b) \textbf{TimeSync Module}: A ZeroMQ-based IPC (Inter-Process Communication) publisher-subscriber system that synchronizes asynchronous sensor streams within ±500ms windows, fusing visual (object/pose labels), audio (sound classifications), and spatial (zone labels derived from coordinates) features into unified timestamped observations; (c) \textbf{ML Engine}: A Python-based inference engine that runs the GRU sequential model to predict zone-specific pollution probabilities based on fused multi-modal context. The ML Engine includes an MQTT client that publishes GRU predictions to the cloud backend and receives configuration updates (cleaning thresholds, zone mappings). Additionally, it hosts a Flower federated learning client that participates in distributed training rounds.
+    \item \textbf{Robot Vacuum Cleaner (Edge AI Module)}: The on-device AI inference pipeline executes entirely on the robot's embedded processor, minimizing transmission of privacy-sensitive sensor data (camera frames, audio streams) to the cloud while location coordinates are shared for visualization. The architecture consists of three sub-components: (a) \textbf{Multi-Modal Sensors}: YOLO and YOLO-Pose models process camera frames to detect objects and human poses, YAMNet analyzes microphone audio (WAV format) to classify environmental sounds, and a location sensor provides real-time $(x, y, z)$ coordinates within the home; (b) \textbf{TimeSync Module}: A ZeroMQ-based IPC (Inter-Process Communication) publisher-subscriber system that synchronizes asynchronous sensor streams within ±500ms windows, fusing visual (object/pose labels), audio (sound classifications), and spatial (zone labels derived from coordinates) features into unified timestamped observations; (c) \textbf{ML Engine}: A Python-based inference engine that runs the GRU sequential model to predict zone-specific pollution probabilities based on fused multi-modal context. The ML Engine includes an MQTT client that publishes GRU predictions to the cloud backend and receives configuration updates (cleaning thresholds, zone mappings). Additionally, it hosts a Flower federated learning client that participates in distributed training rounds.
 
     \item \textbf{Federated Learning Server (FL Server)}: A Flower-based orchestration server that coordinates privacy-preserving model updates across multiple robot devices. The server initiates federated training rounds by broadcasting the current global Base Layer weights to participating Flower clients. Each robot performs local training on its personalized data, then uploads only the Base Layer gradients back to the server. The FL Server aggregates these gradients using the FedAvg algorithm and updates the global model, which is then redistributed to all devices. Critically, the server never receives raw sensor data or personalized Head Layer weights, ensuring that household-specific patterns remain exclusively on-device.
 \end{itemize}
@@ -1374,7 +1250,7 @@ This repository contains the client-server applications that users directly inte
 
 The web-based dashboard provides real-time monitoring and system administration interface built with React and Vite. It consists of API clients, page components, reusable UI elements, custom hooks, and utility functions organized in a modular structure.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \caption{Frontend Dashboard Directory Structure}
 \def\arraystretch{1.2}
 \footnotesize
@@ -1411,7 +1287,7 @@ The web-based dashboard provides real-time monitoring and system administration 
 
 The mobile application captures 3D home structure using Apple RoomPlan and ARKit, built with React Native and Expo. It features tab-based navigation, native iOS integration for spatial scanning, and custom hooks for AR tracking and data transmission to the backend server.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \caption{Mobile Tracker Application Directory Structure}
 \def\arraystretch{1.2}
 \footnotesize
@@ -1442,7 +1318,7 @@ The mobile application captures 3D home structure using Apple RoomPlan and ARKit
 
 The backend server manages authentication, data persistence, and real-time communication infrastructure built with Fastify and PostgreSQL. It follows a modular architecture with dedicated modules for authentication, user management, home structure persistence, semantic labeling, cleaning logs, MQTT messaging, and WebSocket communication. Each module implements the controller-route-service pattern for separation of concerns.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \caption{Backend Server Directory Structure}
 \def\arraystretch{1.2}
 \footnotesize
@@ -1487,7 +1363,7 @@ This repository contains the AI inference pipeline, model training infrastructur
 
 The AI module executes multi-modal on-device inference, temporal synchronization, and pollution prediction workflows. It includes pre-trained model artifacts (YOLO, YAMNet, GRU, Attention Encoder), real-time sensor processing scripts, model training pipelines, and synthetic dataset generation utilities. The \texttt{realtime/} directory contains the edge AI execution engine that runs on robot vacuum cleaners, while the \texttt{training/} directory houses offline model training scripts used to create initial model weights before federated learning deployment.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \caption{AI Module \& Training Directory Structure}
 \def\arraystretch{1.2}
 \footnotesize
@@ -1526,7 +1402,7 @@ The AI module executes multi-modal on-device inference, temporal synchronization
 
 The federated learning module orchestrates privacy-preserving distributed training across multiple edge devices using the Flower framework. It aggregates Base Layer GRU weights via the FedAvg algorithm while ensuring that raw household data and personalized Head Layers never leave individual devices. The IoT Gateway decouples edge AI processing from cloud infrastructure by forwarding metadata via MQTT.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \caption{Federated Learning Module Directory Structure}
 \def\arraystretch{1.2}
 \footnotesize
@@ -1880,6 +1756,24 @@ K. Cho, B. van Merrienboer, D. Bahdanau, and Y. Bengio, "On the Properties of Ne
 
 \bibitem{attention}
 A. Vaswani et al., "Attention is All You Need," in \textit{Advances in Neural Information Processing Systems (NeurIPS)}, vol. 30, 2017.
+
+\bibitem{javascript}
+Mozilla Developer Network, "JavaScript," [Online]. Available: https://developer.mozilla.org/en-US/docs/Web/JavaScript. Accessed: Dec. 2024.
+
+\bibitem{navercloud}
+Naver Cloud Platform, "Naver Cloud Platform: Enterprise Cloud Services," [Online]. Available: https://www.ncloud.com/. Accessed: Dec. 2024.
+
+\bibitem{vscode}
+Microsoft, "Visual Studio Code: Code Editing. Redefined," [Online]. Available: https://code.visualstudio.com/. Accessed: Dec. 2024.
+
+\bibitem{github}
+GitHub, Inc., "GitHub: Where the World Builds Software," [Online]. Available: https://github.com/. Accessed: Dec. 2024.
+
+\bibitem{notion}
+Notion Labs, Inc., "Notion: Your Connected Workspace," [Online]. Available: https://www.notion.so/. Accessed: Dec. 2024.
+
+\bibitem{figma}
+Figma, Inc., "Figma: The Collaborative Interface Design Tool," [Online]. Available: https://www.figma.com/. Accessed: Dec. 2024.
 
 \end{thebibliography}
 
